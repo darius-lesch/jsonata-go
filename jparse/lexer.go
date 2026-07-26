@@ -57,6 +57,9 @@ const (
 	typeAssign
 	typeDescendent
 
+	typeDefault    // ?:
+	typeCoalescing // ??
+
 	// Keyword operators
 	typeAnd
 	typeOr
@@ -131,6 +134,7 @@ var symbols2 = [...][]runeTokenType{
 	'~': {{'>', typeApply}},
 	':': {{'=', typeAssign}},
 	'*': {{'*', typeDescendent}},
+	'?': {{':', typeDefault}, {'?', typeCoalescing}},
 }
 
 const (
@@ -492,8 +496,37 @@ func (l *lexer) acceptAll(isValid func(rune) bool) bool {
 }
 
 func (l *lexer) skipWhitespace() {
-	l.acceptAll(isWhitespace)
-	l.ignore()
+	for {
+		l.acceptAll(isWhitespace)
+
+		l.ignore()
+		ch := l.nextRune()
+		if ch == '/' {
+			if l.acceptRune('*') {
+				l.skipComment()
+				continue
+			}
+			l.backup()
+			l.current = l.start
+		} else if ch != eof {
+			l.backup()
+		}
+
+		l.ignore()
+		break
+	}
+}
+
+func (l *lexer) skipComment() {
+	for {
+		ch := l.nextRune()
+		if ch == eof {
+			break
+		}
+		if ch == '*' && l.acceptRune('/') {
+			break
+		}
+	}
 }
 
 func isWhitespace(r rune) bool {

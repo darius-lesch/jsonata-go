@@ -64,6 +64,8 @@ var leds = [...]led{
 	typeBracketOpen:  parsePredicate,
 	typeBraceOpen:    parseGroup,
 	typeCondition:    parseConditional,
+	typeDefault:      parseDefaultOperator,
+	typeCoalescing:   parseCoalescingOperator,
 	typeAssign:       parseAssignment,
 	typeApply:        parseFunctionApplication,
 	typeConcat:       parseStringConcatenation,
@@ -134,6 +136,8 @@ var bps = initBindingPowers([][]tokenType{
 	},
 	{
 		typeCondition,
+		typeDefault,
+		typeCoalescing,
 	},
 	{
 		typeAssign,

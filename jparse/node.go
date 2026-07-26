@@ -2004,3 +2004,62 @@ func parseRune(hex string) rune {
 
 	return rune(n)
 }
+// A DefaultOperatorNode represents the default (elvis) operator (?:).
+type DefaultOperatorNode struct {
+	LHS Node
+	RHS Node
+}
+
+func parseDefaultOperator(p *parser, t token, lhs Node) (Node, error) {
+	return &DefaultOperatorNode{
+		LHS: lhs,
+		RHS: p.parseExpression(p.bp(t.Type)),
+	}, nil
+}
+
+func (n *DefaultOperatorNode) optimize() (Node, error) {
+	var err error
+	n.LHS, err = n.LHS.optimize()
+	if err != nil {
+		return nil, err
+	}
+	n.RHS, err = n.RHS.optimize()
+	if err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func (n DefaultOperatorNode) String() string {
+	return fmt.Sprintf("%s ?: %s", n.LHS, n.RHS)
+}
+
+// A CoalescingOperatorNode represents the coalescing operator (??).
+type CoalescingOperatorNode struct {
+	LHS Node
+	RHS Node
+}
+
+func parseCoalescingOperator(p *parser, t token, lhs Node) (Node, error) {
+	return &CoalescingOperatorNode{
+		LHS: lhs,
+		RHS: p.parseExpression(p.bp(t.Type)),
+	}, nil
+}
+
+func (n *CoalescingOperatorNode) optimize() (Node, error) {
+	var err error
+	n.LHS, err = n.LHS.optimize()
+	if err != nil {
+		return nil, err
+	}
+	n.RHS, err = n.RHS.optimize()
+	if err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func (n CoalescingOperatorNode) String() string {
+	return fmt.Sprintf("%s ?? %s", n.LHS, n.RHS)
+}
