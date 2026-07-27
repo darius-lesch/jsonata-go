@@ -52,6 +52,10 @@ func eval(node jparse.Node, input reflect.Value, env *environment) (reflect.Valu
 		v, err = evalBlock(node, input, env)
 	case *jparse.ConditionalNode:
 		v, err = evalConditional(node, input, env)
+	case *jparse.DefaultOperatorNode:
+		v, err = evalDefaultOperator(node, input, env)
+	case *jparse.CoalescingOperatorNode:
+		v, err = evalCoalescingOperator(node, input, env)
 	case *jparse.AssignmentNode:
 		v, err = evalAssignment(node, input, env)
 	case *jparse.WildcardNode:
@@ -555,6 +559,34 @@ func evalConditional(node *jparse.ConditionalNode, data reflect.Value, env *envi
 	}
 
 	return undefined, nil
+}
+
+func evalDefaultOperator(node *jparse.DefaultOperatorNode, data reflect.Value, env *environment) (reflect.Value, error) {
+	lhs, err := eval(node.LHS, data, env)
+	if err != nil {
+		return undefined, err
+	}
+
+	if jlib.Boolean(lhs) {
+		return lhs, nil
+	}
+
+	return eval(node.RHS, data, env)
+}
+
+func evalCoalescingOperator(node *jparse.CoalescingOperatorNode, data reflect.Value, env *environment) (reflect.Value, error) {
+	lhs, err := eval(node.LHS, data, env)
+	if err != nil {
+		return undefined, err
+	}
+
+	// In JSONata, coalescing checks strictly for undefined (missing) values.
+	// Falsy values like false, 0, "", or even null are returned directly.
+	if lhs != undefined && lhs.IsValid() {
+		return lhs, nil
+	}
+
+	return eval(node.RHS, data, env)
 }
 
 func evalAssignment(node *jparse.AssignmentNode, data reflect.Value, env *environment) (reflect.Value, error) {
@@ -1174,24 +1206,38 @@ func in(lhs, rhs reflect.Value) bool {
 }
 
 func evalBooleanOperator(node *jparse.BooleanOperatorNode, data reflect.Value, env *environment) (reflect.Value, error) {
-	// Evaluate both sides and return any errors.
+	// Evaluate the left-hand side first
 	lhs, err := eval(node.LHS, data, env)
 	if err != nil {
 		return undefined, err
 	}
 
+	lhsBool := jlib.Boolean(lhs)
+
+	// Short-circuit logic:
+	// If it's an AND operation and LHS is false, return false immediately.
+	if node.Type == jparse.BooleanAnd && !lhsBool {
+		return reflect.ValueOf(false), nil
+	}
+	// If it's an OR operation and LHS is true, return true immediately.
+	if node.Type == jparse.BooleanOr && lhsBool {
+		return reflect.ValueOf(true), nil
+	}
+
+	// Evaluate the right-hand side only if necessary
 	rhs, err := eval(node.RHS, data, env)
 	if err != nil {
 		return undefined, err
 	}
 
-	var b bool
+	rhsBool := jlib.Boolean(rhs)
 
+	var b bool
 	switch node.Type {
 	case jparse.BooleanAnd:
-		b = jlib.Boolean(lhs) && jlib.Boolean(rhs)
+		b = lhsBool && rhsBool
 	case jparse.BooleanOr:
-		b = jlib.Boolean(lhs) || jlib.Boolean(rhs)
+		b = lhsBool || rhsBool
 	default:
 		panicf("unrecognised boolean operator %q", node.Type)
 	}

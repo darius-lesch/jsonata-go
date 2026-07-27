@@ -4046,7 +4046,9 @@ func TestEvalBooleanOperator(t *testing.T) {
 		},
 		{
 			// An error on the right side takes precedence over
-			// an undefined left side.
+			// an undefined left side. BUT WITH SHORT CIRCUITING
+			// it no longer does because LHS evaluates to false
+			// so it short circuits and doesn't throw the error on RHS.
 			Input: &jparse.BooleanOperatorNode{
 				Type: jparse.BooleanAnd,
 				LHS: &jparse.VariableNode{
@@ -4056,11 +4058,7 @@ func TestEvalBooleanOperator(t *testing.T) {
 					RHS: &jparse.NullNode{},
 				},
 			},
-			Error: &EvalError{
-				Type:  ErrNonNumberRHS,
-				Token: "null",
-				Value: "-",
-			},
+			Output: false,
 		},
 	})
 }
