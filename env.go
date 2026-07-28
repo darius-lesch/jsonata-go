@@ -144,6 +144,11 @@ var baseEnv = initBaseEnv(map[string]Extension{
 		UndefinedHandler:   defaultUndefinedHandler,
 		EvalContextHandler: contextHandlerFormatNumber,
 	},
+	"formatInteger": {
+		Func:               jlib.FormatInteger,
+		UndefinedHandler:   defaultUndefinedHandler,
+		EvalContextHandler: contextHandlerFormatNumber,
+	},
 	"formatBase": {
 		Func:               jlib.FormatBase,
 		UndefinedHandler:   defaultUndefinedHandler,
