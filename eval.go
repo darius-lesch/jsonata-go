@@ -196,14 +196,57 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 	lastIndex := len(node.Steps) - 1
 	for i, step := range node.Steps {
 
+		// Extract filters to apply AFTER combining the sequence
+		var filters []jparse.Node
+		if pred, ok := step.(*jparse.PredicateNode); ok {
+			step = pred.Expr
+			filters = pred.Filters
+		}
+
 		if step0, ok := step.(*jparse.ArrayNode); ok && i == 0 {
 			output, err = eval(step0, output, env)
 		} else {
-			output, err = evalPathStep(step, output, env, i == lastIndex)
+			// Disable lastStep shortcut if we have pending filters
+			output, err = evalPathStep(step, output, env, i == lastIndex && len(filters) == 0)
 		}
 
 		if err != nil || output == undefined {
 			return undefined, err
+		}
+
+		if len(filters) > 0 {
+			var outSlice reflect.Value
+			// Unwrap sequence to raw slice to avoid Go reflection panics in applyFilter
+			if seq, ok := asSequence(output); ok {
+				outSlice = reflect.ValueOf(seq.values)
+			} else {
+				outSlice = arrayify(output)
+			}
+
+			for _, filter := range filters {
+				outSlice, err = applyFilter(filter, outSlice, env)
+				if err != nil {
+					return undefined, err
+				}
+				if outSlice == undefined || outSlice.Len() == 0 {
+					break
+				}
+			}
+
+			if outSlice == undefined || outSlice.Len() == 0 {
+				return undefined, nil
+			}
+
+			// Repackage the filtered slice for the next path step
+			if i == lastIndex && outSlice.Len() == 1 && jtypes.IsArray(outSlice.Index(0)) {
+				output = outSlice.Index(0)
+			} else {
+				seq := newSequence(outSlice.Len())
+				for j := 0; j < outSlice.Len(); j++ {
+					seq.Append(outSlice.Index(j).Interface())
+				}
+				output = reflect.ValueOf(seq)
+			}
 		}
 
 		if jtypes.IsArray(output) && jtypes.Resolve(output).Len() == 0 {
@@ -213,6 +256,12 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 
 	if node.KeepArrays {
 		if seq, ok := asSequence(output); ok {
+			seq.keepSingletons = true
+			return reflect.ValueOf(seq), nil
+		} else if jtypes.IsArray(output) {
+			// Wrap raw array into a sequence to preserve it
+			seq := newSequence(1)
+			seq.Append(output.Interface())
 			seq.keepSingletons = true
 			return reflect.ValueOf(seq), nil
 		}
@@ -239,11 +288,10 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 		return results[0], nil
 	}
 
-	_, isCons := step.(*jparse.ArrayNode)
+	isCons := isConstructor(step)
 	resultSequence := newSequence(len(results))
 
 	for _, v := range results {
-
 		if isCons || !jtypes.IsArray(v) {
 			if v.CanInterface() {
 				resultSequence.Append(v.Interface())
@@ -387,6 +435,20 @@ func evalRange(node *jparse.RangeNode, data reflect.Value, env *environment) (re
 	return results, nil
 }
 
+func isConstructor(node jparse.Node) bool {
+	switch n := node.(type) {
+	case *jparse.ArrayNode:
+		return true
+	case *jparse.PathNode:
+		if len(n.Steps) > 0 {
+			return isConstructor(n.Steps[0])
+		}
+	case *jparse.PredicateNode:
+		return isConstructor(n.Expr)
+	}
+	return false
+}
+
 func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (reflect.Value, error) {
 	// Create a slice with capacity equal to the number of items
 	// in the ArrayNode. Note that the final length of the array
@@ -412,14 +474,26 @@ func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (re
 
 		switch item.(type) {
 		case *jparse.ArrayNode:
-			if v.CanInterface() {
+			// Preserve literal nested arrays
+			if v.IsValid() && v.CanInterface() {
 				results = append(results, v.Interface())
 			}
 		default:
-			v = arrayify(v)
-			for i, N := 0, v.Len(); i < N; i++ {
-				if vi := v.Index(i); vi.IsValid() && vi.CanInterface() {
-					results = append(results, vi.Interface())
+			// Flatten strict sequences and unwrapped sequences (slices). Preserve scalars.
+			if seq, isSeq := asSequence(v); isSeq {
+				for i, N := 0, seq.Len(); i < N; i++ {
+					results = append(results, seq.values[i])
+				}
+			} else if jtypes.IsArray(v) {
+				v = jtypes.Resolve(v)
+				for i, N := 0, v.Len(); i < N; i++ {
+					if vi := v.Index(i); vi.IsValid() && vi.CanInterface() {
+						results = append(results, vi.Interface())
+					}
+				}
+			} else {
+				if v.IsValid() && v.CanInterface() {
+					results = append(results, v.Interface())
 				}
 			}
 		}
