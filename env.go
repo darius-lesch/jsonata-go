@@ -387,6 +387,26 @@ var baseEnv = initBaseEnv(map[string]Extension{
 	},
 })
 
+func init() {
+	exts := map[string]Extension{
+		"assert": {
+			Func:               assertFunc,
+			UndefinedHandler:   nil,
+			EvalContextHandler: nil,
+		},
+		"eval": {
+			Func:               evaluate,
+			UndefinedHandler:   defaultUndefinedHandler,
+			EvalContextHandler: nil,
+		},
+	}
+
+	for name, ext := range exts {
+		fn := mustGoCallable(name, ext)
+		baseEnv.bind(name, reflect.ValueOf(fn))
+	}
+}
+
 func initBaseEnv(exts map[string]Extension) *environment {
 
 	env := newEnvironment(nil, len(exts))
@@ -431,6 +451,29 @@ func lookup(v reflect.Value, name string) (interface{}, error) {
 
 func throw(msg string) (interface{}, error) {
 	return nil, errors.New(msg)
+}
+
+func assertFunc(condition bool, msg ...string) (interface{}, error) {
+	if !condition {
+		m := "Assertion failed"
+		if len(msg) > 0 && msg[0] != "" {
+			m = msg[0]
+		}
+		return nil, errors.New(m)
+	}
+	return nil, nil
+}
+
+func evaluate(expr string, context ...interface{}) (interface{}, error) {
+	e, err := Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+	var ctx interface{}
+	if len(context) > 0 {
+		ctx = context[0]
+	}
+	return e.Eval(ctx)
 }
 
 // Undefined handlers
