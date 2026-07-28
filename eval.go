@@ -196,14 +196,57 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 	lastIndex := len(node.Steps) - 1
 	for i, step := range node.Steps {
 
+		// Extract filters to apply AFTER combining the sequence
+		var filters []jparse.Node
+		if pred, ok := step.(*jparse.PredicateNode); ok {
+			step = pred.Expr
+			filters = pred.Filters
+		}
+
 		if step0, ok := step.(*jparse.ArrayNode); ok && i == 0 {
 			output, err = eval(step0, output, env)
 		} else {
-			output, err = evalPathStep(step, output, env, i == lastIndex)
+			// Disable lastStep shortcut if we have pending filters
+			output, err = evalPathStep(step, output, env, i == lastIndex && len(filters) == 0)
 		}
 
 		if err != nil || output == undefined {
 			return undefined, err
+		}
+
+		if len(filters) > 0 {
+			var outSlice reflect.Value
+			// Unwrap sequence to raw slice to avoid Go reflection panics in applyFilter
+			if seq, ok := asSequence(output); ok {
+				outSlice = reflect.ValueOf(seq.values)
+			} else {
+				outSlice = arrayify(output)
+			}
+
+			for _, filter := range filters {
+				outSlice, err = applyFilter(filter, outSlice, env)
+				if err != nil {
+					return undefined, err
+				}
+				if outSlice == undefined || outSlice.Len() == 0 {
+					break
+				}
+			}
+
+			if outSlice == undefined || outSlice.Len() == 0 {
+				return undefined, nil
+			}
+
+			// Repackage the filtered slice for the next path step
+			if i == lastIndex && outSlice.Len() == 1 && jtypes.IsArray(outSlice.Index(0)) {
+				output = outSlice.Index(0)
+			} else {
+				seq := newSequence(outSlice.Len())
+				for j := 0; j < outSlice.Len(); j++ {
+					seq.Append(outSlice.Index(j).Interface())
+				}
+				output = reflect.ValueOf(seq)
+			}
 		}
 
 		if jtypes.IsArray(output) && jtypes.Resolve(output).Len() == 0 {
@@ -247,11 +290,12 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 		return undefined, err
 	}
 
-	if lastStep && len(results) == 1 && jtypes.IsArray(results[0]) {
+	isCons := isConstructor(step)
+
+	if lastStep && len(results) == 1 && jtypes.IsArray(results[0]) && !isCons {
 		return results[0], nil
 	}
 
-	isCons := isConstructor(step)
 	resultSequence := newSequence(len(results))
 
 	for _, v := range results {
