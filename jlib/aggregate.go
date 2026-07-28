@@ -6,8 +6,8 @@ package jlib
 
 import (
 	"fmt"
-	"math"
 	"reflect"
+	"strconv"
 
 	"github.com/blues/jsonata-go/jtypes"
 )
@@ -127,6 +127,8 @@ func Average(v reflect.Value) (float64, error) {
 	}
 
 	avg := sum / float64(v.Len())
-	// JSONata 2.2+ float normalization for averages (14 decimal precision)
-	return math.Round(avg*1e14) / 1e14, nil
+	// Use formatting truncation to string and back to float64 to wipe out IEEE-754 tail errors
+	s := fmt.Sprintf("%.14g", avg)
+	cleanAvg, _ := strconv.ParseFloat(s, 64)
+	return cleanAvg, nil
 }

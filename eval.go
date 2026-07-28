@@ -1129,9 +1129,11 @@ func evalComparisonOperator(node *jparse.ComparisonOperatorNode, data reflect.Va
 		}
 	}
 
-	// Return undefined if either side is undefined.
+	// Return undefined if either side is undefined (except for equality checks)
 	if lhs == undefined || rhs == undefined {
-		return undefined, nil
+		if node.Type != jparse.ComparisonEqual && node.Type != jparse.ComparisonNotEqual {
+			return undefined, nil
+		}
 	}
 
 	var b bool
@@ -1168,6 +1170,9 @@ func needComparableTypes(op jparse.ComparisonOperator) bool {
 }
 
 func eq(lhs, rhs reflect.Value) bool {
+	if lhs == undefined || rhs == undefined {
+		return false
+	}
 	// Numbers, strings, arrays, objects and booleans are compared by value.
 	// Two strings might be different objects in memory but
 	// they're still considered equal if they have the
