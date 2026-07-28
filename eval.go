@@ -412,14 +412,26 @@ func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (re
 
 		switch item.(type) {
 		case *jparse.ArrayNode:
-			if v.CanInterface() {
+			// Preserve literal nested arrays
+			if v.IsValid() && v.CanInterface() {
 				results = append(results, v.Interface())
 			}
 		default:
-			v = arrayify(v)
-			for i, N := 0, v.Len(); i < N; i++ {
-				if vi := v.Index(i); vi.IsValid() && vi.CanInterface() {
-					results = append(results, vi.Interface())
+			// Flatten strict sequences and unwrapped sequences (slices). Preserve scalars.
+			if seq, isSeq := asSequence(v); isSeq {
+				for i, N := 0, seq.Len(); i < N; i++ {
+					results = append(results, seq.values[i])
+				}
+			} else if jtypes.IsArray(v) {
+				v = jtypes.Resolve(v)
+				for i, N := 0, v.Len(); i < N; i++ {
+					if vi := v.Index(i); vi.IsValid() && vi.CanInterface() {
+						results = append(results, vi.Interface())
+					}
+				}
+			} else {
+				if v.IsValid() && v.CanInterface() {
+					results = append(results, v.Interface())
 				}
 			}
 		}
@@ -658,12 +670,69 @@ func evalPredicate(node *jparse.PredicateNode, data reflect.Value, env *environm
 		return undefined, err
 	}
 
+	_, isLiteralArray := node.Expr.(*jparse.ArrayNode)
+
 	for _, filter := range node.Filters {
+		seq, isSeq := asSequence(items)
 
-		// TODO: If this filter is of type *jparse.NumberNode,
-		// we should access the indexed item directly instead
-		// of calling applyFilter.
+		// If it's a slice but NOT a literal array AST node, it's an unwrapped sequence
+		isUnwrappedSeq := !isSeq && !isLiteralArray && jtypes.IsArray(items)
 
+		if isSeq || isUnwrappedSeq {
+			itemsResolved := items
+			if isUnwrappedSeq {
+				itemsResolved = jtypes.Resolve(items)
+			}
+
+			hasArrays := false
+			var values []reflect.Value
+
+			// Collect values and check for inner arrays
+			if isSeq {
+				for _, v := range seq.values {
+					val := reflect.ValueOf(v)
+					values = append(values, val)
+					if jtypes.IsArray(val) {
+						hasArrays = true
+					}
+				}
+			} else {
+				for i := 0; i < itemsResolved.Len(); i++ {
+					val := itemsResolved.Index(i)
+					values = append(values, val)
+					if jtypes.IsArray(val) {
+						hasArrays = true
+					}
+				}
+			}
+
+			// Context Distribution
+			if hasArrays {
+				mappedSeq := newSequence(len(values))
+				for _, val := range values {
+					res, err := applyFilter(filter, arrayify(val), env)
+					if err != nil {
+						return undefined, err
+					}
+					if res != undefined && res.IsValid() {
+						for j, M := 0, res.Len(); j < M; j++ {
+							if vj := res.Index(j); vj.IsValid() && vj.CanInterface() {
+								mappedSeq.Append(vj.Interface())
+							}
+						}
+					}
+				}
+				// Repack into a *sequence to safely pass to downstream steps/filters!
+				items = reflect.ValueOf(mappedSeq)
+				if mappedSeq.Len() == 0 {
+					items = undefined
+					break
+				}
+				continue
+			}
+		}
+
+		// Standard filter application for singletons and literal arrays
 		items, err = applyFilter(filter, arrayify(items), env)
 		if err != nil {
 			return undefined, err
