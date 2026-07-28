@@ -196,57 +196,14 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 	lastIndex := len(node.Steps) - 1
 	for i, step := range node.Steps {
 
-		// Extract filters to apply AFTER combining the sequence
-		var filters []jparse.Node
-		if pred, ok := step.(*jparse.PredicateNode); ok {
-			step = pred.Expr
-			filters = pred.Filters
-		}
-
 		if step0, ok := step.(*jparse.ArrayNode); ok && i == 0 {
 			output, err = eval(step0, output, env)
 		} else {
-			// Disable lastStep shortcut if we have pending filters
-			output, err = evalPathStep(step, output, env, i == lastIndex && len(filters) == 0)
+			output, err = evalPathStep(step, output, env, i == lastIndex)
 		}
 
 		if err != nil || output == undefined {
 			return undefined, err
-		}
-
-		if len(filters) > 0 {
-			var outSlice reflect.Value
-			// Unwrap sequence to raw slice to avoid Go reflection panics in applyFilter
-			if seq, ok := asSequence(output); ok {
-				outSlice = reflect.ValueOf(seq.values)
-			} else {
-				outSlice = arrayify(output)
-			}
-
-			for _, filter := range filters {
-				outSlice, err = applyFilter(filter, outSlice, env)
-				if err != nil {
-					return undefined, err
-				}
-				if outSlice == undefined || outSlice.Len() == 0 {
-					break
-				}
-			}
-
-			if outSlice == undefined || outSlice.Len() == 0 {
-				return undefined, nil
-			}
-
-			// Repackage the filtered slice for the next path step
-			if i == lastIndex && outSlice.Len() == 1 && jtypes.IsArray(outSlice.Index(0)) {
-				output = outSlice.Index(0)
-			} else {
-				seq := newSequence(outSlice.Len())
-				for j := 0; j < outSlice.Len(); j++ {
-					seq.Append(outSlice.Index(j).Interface())
-				}
-				output = reflect.ValueOf(seq)
-			}
 		}
 
 		if jtypes.IsArray(output) && jtypes.Resolve(output).Len() == 0 {
@@ -258,10 +215,16 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 		if seq, ok := asSequence(output); ok {
 			seq.keepSingletons = true
 			return reflect.ValueOf(seq), nil
-		} else if jtypes.IsArray(output) {
-			// Wrap raw array into a sequence to preserve it
-			seq := newSequence(1)
-			seq.Append(output.Interface())
+		} else {
+			seq := newSequence(0)
+			if jtypes.IsArray(output) {
+				output = jtypes.Resolve(output)
+				for i := 0; i < output.Len(); i++ {
+					seq.Append(output.Index(i).Interface())
+				}
+			} else if output.IsValid() && output.CanInterface() {
+				seq.Append(output.Interface())
+			}
 			seq.keepSingletons = true
 			return reflect.ValueOf(seq), nil
 		}
@@ -1168,7 +1131,7 @@ func evalComparisonOperator(node *jparse.ComparisonOperatorNode, data reflect.Va
 
 	// Return undefined if either side is undefined.
 	if lhs == undefined || rhs == undefined {
-		return reflect.ValueOf(false), nil
+		return undefined, nil
 	}
 
 	var b bool

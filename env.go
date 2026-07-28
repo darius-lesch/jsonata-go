@@ -260,7 +260,7 @@ var baseEnv = initBaseEnv(map[string]Extension{
 	},
 	"not": {
 		Func:               jlib.Not,
-		UndefinedHandler:   nil,
+		UndefinedHandler:   defaultUndefinedHandler,
 		EvalContextHandler: defaultContextHandler,
 	},
 	"exists": {
