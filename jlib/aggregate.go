@@ -6,6 +6,7 @@ package jlib
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 
 	"github.com/blues/jsonata-go/jtypes"
@@ -125,5 +126,7 @@ func Average(v reflect.Value) (float64, error) {
 		sum += n
 	}
 
-	return sum / float64(v.Len()), nil
+	avg := sum / float64(v.Len())
+	// JSONata 2.2+ float normalization for averages (14 decimal precision)
+	return math.Round(avg*1e14) / 1e14, nil
 }
