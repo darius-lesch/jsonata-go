@@ -232,11 +232,21 @@ func (e *Expr) newEnv(input reflect.Value) *environment {
 
 	tc := timeCallables(time.Now())
 
-	env := newEnvironment(baseEnv, len(tc)+len(e.registry)+1)
+	env := newEnvironment(baseEnv, len(tc)+len(e.registry)+2)
 
 	env.bind("$", input)
 	env.bindAll(tc)
 	env.bindAll(e.registry)
+
+	evalExt := Extension{
+		Func: func(expr string, context ...interface{}) (interface{}, error) {
+			return evaluate(env, expr, context...)
+		},
+		UndefinedHandler:   defaultUndefinedHandler,
+		EvalContextHandler: nil,
+	}
+	evalFn := mustGoCallable("eval", evalExt)
+	env.bind("eval", reflect.ValueOf(evalFn))
 
 	return env
 }

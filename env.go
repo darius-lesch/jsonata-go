@@ -6,6 +6,7 @@ package jsonata
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -399,11 +400,6 @@ func init() {
 			UndefinedHandler:   nil,
 			EvalContextHandler: nil,
 		},
-		"eval": {
-			Func:               evaluate,
-			UndefinedHandler:   defaultUndefinedHandler,
-			EvalContextHandler: nil,
-		},
 	}
 
 	for name, ext := range exts {
@@ -469,16 +465,37 @@ func assertFunc(condition bool, msg ...string) (interface{}, error) {
 	return nil, nil
 }
 
-func evaluate(expr string, context ...interface{}) (interface{}, error) {
-	e, err := Compile(expr)
+func evaluate(env *environment, expr string, context ...interface{}) (interface{}, error) {
+	node, err := jparse.Parse(expr)
 	if err != nil {
 		return nil, err
 	}
-	var ctx interface{}
-	if len(context) > 0 {
-		ctx = context[0]
+	e := &Expr{
+		node: node,
 	}
-	return e.Eval(ctx)
+
+	// Inherit the calling environment's registry/symbols
+	var ctx reflect.Value
+	if len(context) > 0 {
+		ctx = reflect.ValueOf(context[0])
+	} else {
+		ctx = env.lookup("$")
+	}
+
+	result, err := eval(e.node, ctx, env)
+	if err != nil {
+		return nil, err
+	}
+	if !result.IsValid() {
+		return nil, ErrUndefined
+	}
+	if !result.CanInterface() {
+		return nil, fmt.Errorf("Eval returned a non-interface value")
+	}
+	if result.Kind() == reflect.Ptr && result.IsNil() {
+		return nil, nil
+	}
+	return result.Interface(), nil
 }
 
 // Undefined handlers
