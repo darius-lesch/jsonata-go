@@ -1,9 +1,10 @@
 # JSONata in Go
 
-Package jsonata is a query and transformation language for JSON.
-It's a Go port of the JavaScript library [JSONata](http://jsonata.org/).
+**This repository is an updated fork of the original `blues/jsonata-go` library, upgraded to support JSONata 2.2.2 specifications and WebAssembly**
 
-It currently has feature parity with jsonata-js 1.5.4. As well as a most of the functions added in newer versions. You can see potentially missing functions by looking at the [jsonata-js changelog](https://github.com/jsonata-js/jsonata/blob/master/CHANGELOG.md).
+Package `jsonata-go` is a Go port of the JavaScript library [JSONata](http://jsonata.org/) - a query and transformation language for JSON.
+
+It currently has feature parity with `jsonata-js` 2.2.2. You can see potentially missing functions by looking at the [jsonata-js changelog](https://github.com/jsonata-js/jsonata/blob/master/CHANGELOG.md).
 
 ## Install
 
@@ -60,8 +61,6 @@ for testing is [available here](https://github.com/blues/jsonata-go/jsonata-serv
 
 ## JSONata tests
 A CLI tool for running jsonata-go against the [JSONata test suite](https://github.com/jsonata-js/jsonata/tree/master/test/test-suite) is [available here](./jsonata-test).
-
-
 
 ## Contributing
 
