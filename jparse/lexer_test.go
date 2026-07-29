@@ -367,11 +367,17 @@ func testLexer(t *testing.T, data []lexerTestCase) {
 
 		compareErrors(t, test.Input, test.Error, l.err)
 
-		// The lexer should keep returning EOF after exhausting
-		// the input. Call next() a few times to make sure that
-		// repeated calls return EOF as expected.
+		// The lexer should keep returning EOF after exhausting the input,
+		// UNLESS the lexer halted on an error, in which case it returns typeError.
 		for i := 0; i < 3; i++ {
-			compareTokens(t, test.Input, eof, l.next(test.AllowRegex))
+			if test.Error != nil {
+				got := l.next(test.AllowRegex)
+				if got.Type != typeError {
+					t.Errorf("%s: expected token with Type '%s', got '%s'", test.Input, typeError, got.Type)
+				}
+			} else {
+				compareTokens(t, test.Input, eof, l.next(test.AllowRegex))
+			}
 		}
 	}
 }

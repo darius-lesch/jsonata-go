@@ -3790,7 +3790,7 @@ func TestEvalComparisonOperator(t *testing.T) {
 			Output: false,
 		},
 		{
-			// Right side is undefined. Return false.
+			// Right side is undefined. Return undefined.
 			Input: &jparse.ComparisonOperatorNode{
 				Type: jparse.ComparisonLess,
 				LHS:  &jparse.NumberNode{},
@@ -3798,7 +3798,7 @@ func TestEvalComparisonOperator(t *testing.T) {
 					Name: "x",
 				},
 			},
-			Output: false,
+			Output: nil,
 		},
 	})
 }
