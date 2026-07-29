@@ -216,6 +216,10 @@ func (l *lexer) next(allowRegex bool) token {
 
 	l.skipWhitespace()
 
+	if l.err != nil {
+		return token{Type: typeError, Position: l.current}
+	}
+
 	ch := l.nextRune()
 	if ch == eof {
 		return l.eof()

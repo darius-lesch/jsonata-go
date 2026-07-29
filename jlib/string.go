@@ -34,13 +34,19 @@ func String(value interface{}) (string, error) {
 	case []byte:
 		return string(v), nil
 	case float64:
-		// Will this ever fire in real world JSONata? Out of range
-		// errors should be caught either at the parse stage or when
-		// the argument to string() is evaluated. Tempted to remove
-		// this test as Encode would catch the error anyway.
 		if math.IsNaN(v) || math.IsInf(v, 0) {
 			return "", newError("string", ErrNaNInf)
 		}
+		// Fix IEEE-754 precision drift exclusively during string coercion
+		s := fmt.Sprintf("%.14g", v)
+		clean, _ := strconv.ParseFloat(s, 64)
+
+		b := bytes.Buffer{}
+		e := json.NewEncoder(&b)
+		if err := e.Encode(clean); err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(b.String()), nil
 	}
 
 	// TODO: Round numbers to 13dps to match jsonata-js.
