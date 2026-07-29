@@ -881,8 +881,24 @@ func TestComparisonOperators2(t *testing.T) {
 				"bar < foo.bar",
 				"bar <= foo.bar",
 				"bar != foo.bar + 56",
+				"bar = nothing",
 			},
 			Output: false,
+		},
+		{
+			Expression: []string{
+				"nothing != bar",
+			},
+			Output: true,
+		},
+		{
+			Expression: []string{
+				"bar > nothing",
+				"nothing >= bar",
+				"nothing < bar",
+				"bar <= nothing",
+			},
+			Error: ErrUndefined,
 		},
 		{
 			Expression: []string{
@@ -892,21 +908,6 @@ func TestComparisonOperators2(t *testing.T) {
 			Output: map[string]interface{}{
 				"fud": "hello",
 			},
-		},
-
-		// If either operand evaluates to no results, all
-		// comparison operators return false.
-
-		{
-			Expression: []string{
-				"bar = nothing",
-				"nothing != bar",
-				"bar > nothing",
-				"nothing >= bar",
-				"nothing < bar",
-				"bar <= nothing",
-			},
-			Output: false,
 		},
 	})
 }
@@ -948,10 +949,15 @@ func TestIncludeOperator(t *testing.T) {
 			Expression: []string{
 				"3 in [1,2]",
 				`"hello" in [1,2]`,
+			},
+			Output: false,
+		},
+		{
+			Expression: []string{
 				`in in ["hello", "world"]`,
 				`"world" in in`,
 			},
-			Output: false,
+			Error: ErrUndefined,
 		},
 	})
 }
@@ -4011,9 +4017,8 @@ func TestFuncSum2(t *testing.T) {
 		{
 			Expression: `Account.Order.(OrderID & ": " & $sum(Product.(Price*Quantity)))`,
 			Output: []interface{}{
-				// TODO: Why does jsonata-js only display to 2dp?
-				"order103: 90.57000000000001",
-				"order104: 245.79000000000002",
+				"order103: 90.57",
+				"order104: 245.79",
 			},
 		},
 		{
@@ -4300,9 +4305,8 @@ func TestFuncAverage2(t *testing.T) {
 		{
 			Expression: `Account.Order.(OrderID & ": " & $average(Product.(Price*Quantity)))`,
 			Output: []interface{}{
-				// TODO: Why does jsonata-js only display to 3dp?
-				"order103: 45.285000000000004",
-				"order104: 122.89500000000001",
+				"order103: 45.285",
+				"order104: 122.895",
 			},
 		},
 	})
@@ -5066,7 +5070,7 @@ func TestFuncString(t *testing.T) {
 		},
 		{
 			Expression: `$string(22/7)`,
-			Output:     "3.142857142857143", // TODO: jsonata-js returns "3.142857142857"
+			Output:     "3.1428571428571",
 		},
 		{
 			Expression: `$string(1e100)`,
@@ -5174,10 +5178,9 @@ func TestFuncString2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `Account.Order.$string($sum(Product.(Price* Quantity)))`,
-			// TODO: jsonata-js rounds to "90.57" and "245.79"
 			Output: []interface{}{
-				"90.57000000000001",
-				"245.79000000000002",
+				"90.57",
+				"245.79",
 			},
 		},
 	})
@@ -7660,7 +7663,7 @@ func TestLambdaSignatures(t *testing.T) {
 		},
 		{
 			Expression: `λ($arg)<b:b>{$not($arg)}(foo)`,
-			Output:     true,
+			Error:      ErrUndefined,
 		},
 		{
 			Expression: `λ($arg)<x:b>{$not($arg)}(null)`,
