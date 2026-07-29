@@ -286,23 +286,33 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 
 	// Apply predicate filters to the fully flattened context sequence
 	if len(filters) > 0 {
+		var outSlice reflect.Value
+		
+		// CRITICAL FIX: Unwrap the sequence to a raw slice before filtering
+		if seq, ok := asSequence(output); ok {
+			outSlice = reflect.ValueOf(seq.values)
+		} else {
+			outSlice = arrayify(output)
+		}
+
 		for _, filter := range filters {
-			output, err = applyFilter(filter, arrayify(output), env)
+			outSlice, err = applyFilter(filter, outSlice, env)
 			if err != nil {
 				return undefined, err
 			}
-			if output == undefined || output.Len() == 0 {
+			if outSlice == undefined || outSlice.Len() == 0 {
 				return undefined, nil
 			}
 		}
 
 		// Repackage the filtered slice for the next path step
-		if lastStep && output.Len() == 1 && jtypes.IsArray(output.Index(0)) && !isCons {
-			return output.Index(0), nil
+		if lastStep && outSlice.Len() == 1 && jtypes.IsArray(outSlice.Index(0)) && !isCons {
+			return outSlice.Index(0), nil
 		}
-		seq := newSequence(output.Len())
-		for j := 0; j < output.Len(); j++ {
-			seq.Append(output.Index(j).Interface())
+		
+		seq := newSequence(outSlice.Len())
+		for j := 0; j < outSlice.Len(); j++ {
+			seq.Append(outSlice.Index(j).Interface())
 		}
 		output = reflect.ValueOf(seq)
 	}
