@@ -176,20 +176,11 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 		return undefined, nil
 	}
 
-	var isVar bool
-	switch step0 := node.Steps[0].(type) {
-	case (*jparse.VariableNode):
-		isVar = true
-	case (*jparse.PredicateNode):
-		_, isVar = step0.Expr.(*jparse.VariableNode)
-	}
-
-	output := data
-	if isVar || !jtypes.IsArray(data) {
-		output = reflect.MakeSlice(typeInterfaceSlice, 1, 1)
-		if data.IsValid() {
-			output.Index(0).Set(data)
-		}
+	// JSONata paths always treat their initial root context as a single entity (a sequence of 1),
+	// preventing subsequent steps from prematurely mapping over root arrays.
+	output := reflect.MakeSlice(typeInterfaceSlice, 1, 1)
+	if data.IsValid() {
+		output.Index(0).Set(data)
 	}
 
 	var err error
@@ -237,13 +228,6 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 	var err error
 	var results []reflect.Value
 
-	// Separate filters to apply AFTER the sequence is combined
-	var filters []jparse.Node
-	if pred, ok := step.(*jparse.PredicateNode); ok {
-		step = pred.Expr
-		filters = pred.Filters
-	}
-
 	if seq, ok := asSequence(data); ok {
 		results, err = evalOverSequence(step, seq, env)
 	} else {
@@ -256,7 +240,7 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 
 	isCons := isConstructor(step)
 
-	if lastStep && len(filters) == 0 && len(results) == 1 && jtypes.IsArray(results[0]) && !isCons {
+	if lastStep && len(results) == 1 && jtypes.IsArray(results[0]) && !isCons {
 		return results[0], nil
 	}
 
@@ -282,42 +266,7 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 		return undefined, nil
 	}
 
-	var output reflect.Value = reflect.ValueOf(resultSequence)
-
-	// Apply predicate filters to the fully flattened context sequence
-	if len(filters) > 0 {
-		var outSlice reflect.Value
-		
-		// CRITICAL FIX: Unwrap the sequence to a raw slice before filtering
-		if seq, ok := asSequence(output); ok {
-			outSlice = reflect.ValueOf(seq.values)
-		} else {
-			outSlice = arrayify(output)
-		}
-
-		for _, filter := range filters {
-			outSlice, err = applyFilter(filter, outSlice, env)
-			if err != nil {
-				return undefined, err
-			}
-			if outSlice == undefined || outSlice.Len() == 0 {
-				return undefined, nil
-			}
-		}
-
-		// Repackage the filtered slice for the next path step
-		if lastStep && outSlice.Len() == 1 && jtypes.IsArray(outSlice.Index(0)) && !isCons {
-			return outSlice.Index(0), nil
-		}
-		
-		seq := newSequence(outSlice.Len())
-		for j := 0; j < outSlice.Len(); j++ {
-			seq.Append(outSlice.Index(j).Interface())
-		}
-		output = reflect.ValueOf(seq)
-	}
-
-	return output, nil
+	return reflect.ValueOf(resultSequence), nil
 }
 
 func evalOverArray(node jparse.Node, data reflect.Value, env *environment) ([]reflect.Value, error) {
