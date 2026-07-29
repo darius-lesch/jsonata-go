@@ -521,6 +521,7 @@ func (l *lexer) skipComment() {
 	for {
 		ch := l.nextRune()
 		if ch == eof {
+			l.error(ErrSyntaxError, "/*")
 			break
 		}
 		if ch == '*' && l.acceptRune('/') {

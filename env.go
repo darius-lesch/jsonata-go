@@ -6,7 +6,6 @@ package jsonata
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -406,6 +405,8 @@ func init() {
 		fn := mustGoCallable(name, ext)
 		baseEnv.bind(name, reflect.ValueOf(fn))
 	}
+
+	baseEnv.bind("eval", reflect.ValueOf(&evalCallable{}))
 }
 
 func initBaseEnv(exts map[string]Extension) *environment {
@@ -465,37 +466,42 @@ func assertFunc(condition bool, msg ...string) (interface{}, error) {
 	return nil, nil
 }
 
-func evaluate(env *environment, expr string, context ...interface{}) (interface{}, error) {
-	node, err := jparse.Parse(expr)
-	if err != nil {
-		return nil, err
+type evalCallable struct {
+	ctx reflect.Value
+}
+
+func (e *evalCallable) Name() string { return "eval" }
+func (e *evalCallable) ParamCount() int { return 2 }
+func (e *evalCallable) SetContext(v reflect.Value) { e.ctx = v }
+func (e *evalCallable) Call(args []reflect.Value) (reflect.Value, error) {
+	if len(args) == 0 || !args[0].IsValid() {
+		return undefined, nil
 	}
-	e := &Expr{
-		node: node,
+	expr, ok := jtypes.AsString(args[0])
+	if !ok {
+		return undefined, errors.New("eval requires a string argument")
 	}
 
-	// Inherit the calling environment's registry/symbols
-	var ctx reflect.Value
-	if len(context) > 0 {
-		ctx = reflect.ValueOf(context[0])
-	} else {
-		ctx = env.lookup("$")
+	ast, err := Compile(expr)
+	if err != nil {
+		return undefined, err
 	}
 
-	result, err := eval(e.node, ctx, env)
+	var evalCtx interface{}
+	if len(args) > 1 && args[1].IsValid() && args[1].CanInterface() {
+		evalCtx = args[1].Interface()
+	} else if e.ctx.IsValid() && e.ctx.CanInterface() {
+		evalCtx = e.ctx.Interface()
+	}
+
+	res, err := ast.Eval(evalCtx)
 	if err != nil {
-		return nil, err
+		return undefined, err
 	}
-	if !result.IsValid() {
-		return nil, ErrUndefined
+	if res == nil {
+		return undefined, nil
 	}
-	if !result.CanInterface() {
-		return nil, fmt.Errorf("Eval returned a non-interface value")
-	}
-	if result.Kind() == reflect.Ptr && result.IsNil() {
-		return nil, nil
-	}
-	return result.Interface(), nil
+	return reflect.ValueOf(res), nil
 }
 
 // Undefined handlers
