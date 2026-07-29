@@ -7,7 +7,6 @@ package jlib
 import (
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/blues/jsonata-go/jtypes"
 )
@@ -126,9 +125,5 @@ func Average(v reflect.Value) (float64, error) {
 		sum += n
 	}
 
-	avg := sum / float64(v.Len())
-	// Use formatting truncation to string and back to float64 to wipe out IEEE-754 tail errors
-	s := fmt.Sprintf("%.14g", avg)
-	cleanAvg, _ := strconv.ParseFloat(s, 64)
-	return cleanAvg, nil
+	return sum / float64(v.Len()), nil
 }

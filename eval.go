@@ -247,11 +247,12 @@ func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastSt
 		return undefined, err
 	}
 
-	if lastStep && len(results) == 1 && jtypes.IsArray(results[0]) {
+	isCons := isConstructor(step)
+
+	if lastStep && len(results) == 1 && jtypes.IsArray(results[0]) && !isCons {
 		return results[0], nil
 	}
 
-	isCons := isConstructor(step)
 	resultSequence := newSequence(len(results))
 
 	for _, v := range results {

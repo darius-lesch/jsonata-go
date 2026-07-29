@@ -238,15 +238,7 @@ func (e *Expr) newEnv(input reflect.Value) *environment {
 	env.bindAll(tc)
 	env.bindAll(e.registry)
 
-	evalExt := Extension{
-		Func: func(expr string, context ...interface{}) (interface{}, error) {
-			return evaluate(env, expr, context...)
-		},
-		UndefinedHandler:   defaultUndefinedHandler,
-		EvalContextHandler: nil,
-	}
-	evalFn := mustGoCallable("eval", evalExt)
-	env.bind("eval", reflect.ValueOf(evalFn))
+	env.bind("eval", reflect.ValueOf(&evalCallable{}))
 
 	return env
 }
