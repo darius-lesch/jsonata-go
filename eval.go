@@ -154,17 +154,31 @@ func evalName(node *jparse.NameNode, data reflect.Value, env *environment) (refl
 
 func evalNameArray(node *jparse.NameNode, data reflect.Value, env *environment) (reflect.Value, error) {
 	n := data.Len()
-	results := newSequence(n)
+	results := newSequence(0)
 
 	for i := 0; i < n; i++ {
-
 		v, err := evalName(node, data.Index(i), env)
 		if err != nil {
 			return undefined, err
 		}
 
 		if v.IsValid() && v.CanInterface() {
-			results.Append(v.Interface())
+			// Unwrap sequence pointers into slices
+			if seq, ok := asSequence(v); ok {
+				v = reflect.ValueOf(seq.values)
+			}
+
+			// Flatten arrays into the results sequence
+			if jtypes.IsArray(v) {
+				v = jtypes.Resolve(v)
+				for j, M := 0, v.Len(); j < M; j++ {
+					if vj := v.Index(j); vj.IsValid() && vj.CanInterface() {
+						results.Append(vj.Interface())
+					}
+				}
+			} else {
+				results.Append(v.Interface())
+			}
 		}
 	}
 
@@ -185,11 +199,18 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 	}
 
 	output := data
-	if isVar || !jtypes.IsArray(data) {
-		output = reflect.MakeSlice(typeInterfaceSlice, 1, 1)
+	_, isSeq := asSequence(data)
+	
+	// Mirror JS: Ensure the root context acts as a single sequence entity
+	if isVar || !isSeq {
+		seq := newSequence(1)
 		if data.IsValid() {
-			output.Index(0).Set(data)
+			seq.Append(data.Interface())
+		} else {
+			// Append nil to ensure empty contexts execute exactly once
+			seq.Append(nil)
 		}
+		output = reflect.ValueOf(seq)
 	}
 
 	var err error
