@@ -1,4 +1,4 @@
-# Code of conduct
+# Code of Conduct
 
 ## Our Goal
 We are committed to providing a welcoming, respectful, and inclusive environment for everyone, regardless of background, identity, or experience level. We expect all contributors and participants to treat others with empathy, keep discussions constructive, and communicate professionally.
