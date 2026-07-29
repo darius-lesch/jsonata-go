@@ -494,27 +494,43 @@ func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (re
 }
 
 func evalObject(node *jparse.ObjectNode, data reflect.Value, env *environment) (reflect.Value, error) {
-	data = makeArray(data)
+	dataArray := makeArray(data)
 
-	keys, err := groupItemsByKey(node, data, env)
+	keys, err := groupItemsByKey(node, dataArray, env)
 	if err != nil {
 		return undefined, err
 	}
 
-	nItems := data.Len()
+	nItems := dataArray.Len()
 	results := make(map[string]interface{}, len(keys))
 
 	for key, idx := range keys {
 
-		items := data
-		if n := len(idx.items); n != 0 && n != nItems {
-			items = reflect.MakeSlice(typeInterfaceSlice, n, n)
-			for i, j := range idx.items {
-				items.Index(i).Set(data.Index(j))
+		// Static string keys bypass item mapping in groupItemsByKey, leaving items nil.
+		// If empty, the static key applies to all items in the current context.
+		itemIndices := idx.items
+		if len(itemIndices) == 0 {
+			itemIndices = make([]int, nItems)
+			for j := 0; j < nItems; j++ {
+				itemIndices[j] = j
 			}
 		}
 
-		value, err := eval(node.Pairs[idx.pair][1], items, env)
+		// Mimic upstream evaluateGroupExpression: if a group has only 1 item,
+		// the context is exactly that scalar item. If it has multiple, the context
+		// is a sequence of those items.
+		var context reflect.Value
+		if len(itemIndices) == 1 {
+			context = dataArray.Index(itemIndices[0])
+		} else {
+			seq := newSequence(len(itemIndices))
+			for _, j := range itemIndices {
+				seq.Append(dataArray.Index(j).Interface())
+			}
+			context = reflect.ValueOf(seq)
+		}
+
+		value, err := eval(node.Pairs[idx.pair][1], context, env)
 		if err != nil {
 			return undefined, err
 		}
