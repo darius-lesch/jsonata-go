@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/blues/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/jtypes"
 )
 
 // Sum returns the total of an array of numbers. If the array is

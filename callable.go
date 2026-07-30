@@ -11,9 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/blues/jsonata-go/jlib"
-	"github.com/blues/jsonata-go/jparse"
-	"github.com/blues/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/jlib"
+	"github.com/darius-lesch/jsonata-go/jparse"
+	"github.com/darius-lesch/jsonata-go/jtypes"
 )
 
 type callableName struct {

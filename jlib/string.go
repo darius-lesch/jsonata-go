@@ -17,8 +17,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/blues/jsonata-go/jlib/jxpath"
-	"github.com/blues/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/jlib/jxpath"
+	"github.com/darius-lesch/jsonata-go/jtypes"
 )
 
 // String converts a JSONata value to a string. Values that are
