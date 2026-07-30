@@ -200,7 +200,7 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 
 	output := data
 	_, isSeq := asSequence(data)
-	
+
 	// Mirror JS: Ensure the root context acts as a single sequence entity
 	if isVar || !isSeq {
 		seq := newSequence(1)

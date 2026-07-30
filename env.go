@@ -470,8 +470,8 @@ type evalCallable struct {
 	ctx reflect.Value
 }
 
-func (e *evalCallable) Name() string { return "eval" }
-func (e *evalCallable) ParamCount() int { return 2 }
+func (e *evalCallable) Name() string               { return "eval" }
+func (e *evalCallable) ParamCount() int            { return 2 }
 func (e *evalCallable) SetContext(v reflect.Value) { e.ctx = v }
 func (e *evalCallable) Call(args []reflect.Value) (reflect.Value, error) {
 	if len(args) == 0 || !args[0].IsValid() {

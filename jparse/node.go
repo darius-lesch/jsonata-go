@@ -2004,6 +2004,7 @@ func parseRune(hex string) rune {
 
 	return rune(n)
 }
+
 // A DefaultOperatorNode represents the default (elvis) operator (?:).
 type DefaultOperatorNode struct {
 	LHS Node

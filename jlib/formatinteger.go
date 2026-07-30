@@ -144,7 +144,7 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 					break
 				}
 				curr--
-				if r - curr >= 10 {
+				if r-curr >= 10 {
 					break
 				}
 			}
@@ -163,7 +163,7 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 					break
 				}
 				curr--
-				if r - curr >= 10 {
+				if r-curr >= 10 {
 					break
 				}
 			}
@@ -224,7 +224,7 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 		if len(groups) > 1 {
 			// They are regular if all grouping intervals are the same, and the characters are the same
 			for i := 1; i < len(groups); i++ {
-				if groups[i] - groups[i-1] != regularSize || separators[i] != sepChar {
+				if groups[i]-groups[i-1] != regularSize || separators[i] != sepChar {
 					isRegular = false
 					break
 				}
@@ -301,7 +301,7 @@ func formatWords(n int64, isOrdinal bool) string {
 	}
 
 	units := []string{"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-	                  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
+		"eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
 	tens := []string{"", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"}
 	scales := []string{"", "thousand", "million", "billion", "trillion"}
 
