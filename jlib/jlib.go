@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/darius-lesch/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
 func init() {

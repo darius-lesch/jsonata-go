@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/darius-lesch/jsonata-go/jlib"
-	"github.com/darius-lesch/jsonata-go/jparse"
-	"github.com/darius-lesch/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/v2/jlib"
+	"github.com/darius-lesch/jsonata-go/v2/jparse"
+	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
 type evalTestCase struct {
