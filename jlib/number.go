@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/darius-lesch/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
 var reNumber = regexp.MustCompile(`^-?(([0-9]+))(\.[0-9]+)?([Ee][-+]?[0-9]+)?$`)

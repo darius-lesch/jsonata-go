@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall/js"
 
-	"github.com/darius-lesch/jsonata-go"
+	"github.com/darius-lesch/jsonata-go/v2"
 )
 
 var exprCache sync.Map // string -> *jsonata.Expr

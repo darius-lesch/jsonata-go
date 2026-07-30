@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/darius-lesch/jsonata-go/jlib"
-	"github.com/darius-lesch/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/v2/jlib"
+	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
 // Default format for dates: e.g. 2006-01-02 15:04 MST
