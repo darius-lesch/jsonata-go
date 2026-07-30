@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/blues/jsonata-go/jparse"
-	"github.com/blues/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/jparse"
+	"github.com/darius-lesch/jsonata-go/jtypes"
 )
 
 var (

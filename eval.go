@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/blues/jsonata-go/jlib"
-	"github.com/blues/jsonata-go/jparse"
-	"github.com/blues/jsonata-go/jtypes"
+	"github.com/darius-lesch/jsonata-go/jlib"
+	"github.com/darius-lesch/jsonata-go/jparse"
+	"github.com/darius-lesch/jsonata-go/jtypes"
 )
 
 var undefined reflect.Value
