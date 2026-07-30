@@ -24,7 +24,7 @@ This repository maintains **100% feature compliance with `jsonata-js` v2.2.2**, 
 Requires **Go 1.22+**.
 
 ```bash
-go get github.com/darius-lesch/jsonata-go
+go get github.com/darius-lesch/jsonata-go/v2
 
 ```
 ---
@@ -39,7 +39,7 @@ import (
 	"fmt"
 	"log"
 
-	jsonata "github.com/darius-lesch/jsonata-go"
+	jsonata "github.com/darius-lesch/jsonata-go/v2"
 )
 
 const jsonString = `
@@ -120,7 +120,7 @@ A locally hosted version of the [JSONata Exerciser](http://try.jsonata.org/) web
 #### Installation & Running
 
 ```bash
-go install github.com/darius-lesch/jsonata-go/jsonata-server@latest
+go install github.com/darius-lesch/jsonata-go/v2/jsonata-server@latest
 jsonata-server -port=8080
 
 ```
@@ -137,7 +137,7 @@ A CLI utility used to run `jsonata-go` directly against the official [`jsonata-j
 
 1. **Install the CLI runner:**
 ```bash
-go install github.com/darius-lesch/jsonata-go/jsonata-test@latest
+go install github.com/darius-lesch/jsonata-go/v2/jsonata-test@latest
 
 ```
 
