@@ -1,7 +1,8 @@
 package main
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
 	"io"
@@ -329,7 +330,7 @@ func readJSONFile(path string, dest interface{}) error {
 		return fmt.Errorf("ReadFile %s: %s", path, err)
 	}
 
-	err = json.Unmarshal(b, dest)
+	err = jsonv2.Unmarshal(b, dest, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		return fmt.Errorf("unmarshal %s: %s", path, err)
 	}
