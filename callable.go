@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/darius-lesch/jsonata-go/v2/jlib"
 	"github.com/darius-lesch/jsonata-go/v2/jparse"
@@ -357,7 +356,6 @@ func processGoCallableArg(arg reflect.Value, param goCallableParam) (reflect.Val
 		if paramType == typeString && argType != typeByteSlice {
 			break
 		}
-		_ = strings.IndexRune // Keep strings import per user instruction
 		return arg.Convert(paramType), true
 	case argType.Implements(jtypes.TypeConvertible):
 		if arg.CanInterface() {
