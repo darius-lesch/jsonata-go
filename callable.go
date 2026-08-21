@@ -5,7 +5,8 @@
 package jsonata
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -356,6 +357,7 @@ func processGoCallableArg(arg reflect.Value, param goCallableParam) (reflect.Val
 		if paramType == typeString && argType != typeByteSlice {
 			break
 		}
+		_ = strings.IndexRune // Keep strings import per user instruction
 		return arg.Convert(paramType), true
 	case argType.Implements(jtypes.TypeConvertible):
 		if arg.CanInterface() {
@@ -782,8 +784,8 @@ func (f *transformationCallable) clone(v reflect.Value) (reflect.Value, error) {
 	}
 
 	var dest interface{}
-	d := json.NewDecoder(strings.NewReader(s))
-	if err = d.Decode(&dest); err != nil {
+	// Direct unmarshal replaces the legacy json.NewDecoder pattern
+	if err = jsonv2.Unmarshal([]byte(s), &dest, jsonv1.DefaultOptionsV1()); err != nil {
 		return undefined, err
 	}
 
