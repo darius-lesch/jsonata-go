@@ -5,11 +5,11 @@
 package jsonata
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/darius-lesch/jsonata-go/v2/jlib"
 	"github.com/darius-lesch/jsonata-go/v2/jparse"
@@ -782,8 +782,8 @@ func (f *transformationCallable) clone(v reflect.Value) (reflect.Value, error) {
 	}
 
 	var dest interface{}
-	d := json.NewDecoder(strings.NewReader(s))
-	if err = d.Decode(&dest); err != nil {
+	// Direct unmarshal replaces the legacy json.NewDecoder pattern
+	if err = jsonv2.Unmarshal([]byte(s), &dest, jsonv1.DefaultOptionsV1()); err != nil {
 		return undefined, err
 	}
 
