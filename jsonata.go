@@ -5,7 +5,8 @@
 package jsonata
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"sync"
@@ -165,7 +166,7 @@ func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
 
 	var v interface{}
 
-	err := json.Unmarshal(data, &v)
+	err := jsonv2.Unmarshal(data, &v, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +176,7 @@ func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(v)
+	return jsonv2.Marshal(v, jsonv1.DefaultOptionsV1())
 }
 
 // RegisterExts registers custom functions for use during

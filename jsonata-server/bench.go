@@ -8,7 +8,8 @@ import (
 	"log"
 	"net/http"
 
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 
 	jsonata "github.com/darius-lesch/jsonata-go/v2"
 )
@@ -77,7 +78,7 @@ var (
 var data interface{}
 
 func init() {
-	if err := json.Unmarshal(benchData, &data); err != nil {
+	if err := jsonv2.Unmarshal(benchData, &data, jsonv1.DefaultOptionsV1()); err != nil {
 		panic(err)
 	}
 }

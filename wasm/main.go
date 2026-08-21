@@ -3,7 +3,8 @@
 package main
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"sync"
 	"syscall/js"
@@ -53,7 +54,7 @@ func doEval(exprStr, jsonStr string) (result string, err error) {
 
 	var data interface{}
 	if jsonStr != "" {
-		if unmarshalErr := json.Unmarshal([]byte(jsonStr), &data); unmarshalErr != nil {
+		if unmarshalErr := jsonv2.Unmarshal([]byte(jsonStr), &data, jsonv1.DefaultOptionsV1()); unmarshalErr != nil {
 			return "", fmt.Errorf("invalid JSON data: %w", unmarshalErr)
 		}
 	}
@@ -68,7 +69,7 @@ func doEval(exprStr, jsonStr string) (result string, err error) {
 		return "", nil
 	}
 
-	out, marshalErr := json.Marshal(res)
+	out, marshalErr := jsonv2.Marshal(res, jsonv1.DefaultOptionsV1())
 	if marshalErr != nil {
 		return "", fmt.Errorf("cannot marshal result: %w", marshalErr)
 	}
