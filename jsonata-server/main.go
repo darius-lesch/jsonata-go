@@ -5,8 +5,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
 	"log"
@@ -90,7 +91,7 @@ func eval(input, expression string) (b []byte, status int, err error) {
 
 	// Decode the JSON.
 	var data interface{}
-	if err := json.Unmarshal([]byte(input), &data); err != nil {
+	if err := jsonv2.Unmarshal([]byte(input), &data, jsonv1.DefaultOptionsV1()); err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("input error: %s", err)
 	}
 
@@ -120,13 +121,12 @@ func eval(input, expression string) (b []byte, status int, err error) {
 }
 
 func jsonify(v interface{}) ([]byte, error) {
-
-	b := bytes.Buffer{}
-	e := json.NewEncoder(&b)
-	e.SetIndent("", "    ")
-	if err := e.Encode(v); err != nil {
+	// Replaces legacy MarshalIndent and json.NewEncoder
+	b, err := jsonv2.Marshal(v, jsonv1.DefaultOptionsV1(), jsontext.WithIndent("    "))
+	if err != nil {
 		return nil, err
 	}
 
-	return b.Bytes(), nil
+	// Append a newline to perfectly match the legacy Encoder's output
+	return append(b, '\n'), nil
 }
