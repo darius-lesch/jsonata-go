@@ -5,9 +5,9 @@
 package jlib
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"math"
 	"net/url"
@@ -41,23 +41,21 @@ func String(value interface{}) (string, error) {
 		s := fmt.Sprintf("%.14g", v)
 		clean, _ := strconv.ParseFloat(s, 64)
 
-		b := bytes.Buffer{}
-		e := json.NewEncoder(&b)
-		if err := e.Encode(clean); err != nil {
+		b, err := jsonv2.Marshal(clean, jsonv1.DefaultOptionsV1())
+		if err != nil {
 			return "", err
 		}
-		return strings.TrimSpace(b.String()), nil
+		return strings.TrimSpace(string(b)), nil
 	}
 
 	// TODO: Round numbers to 13dps to match jsonata-js.
-	b := bytes.Buffer{}
-	e := json.NewEncoder(&b)
-	if err := e.Encode(value); err != nil {
+	b, err := jsonv2.Marshal(value, jsonv1.DefaultOptionsV1())
+	if err != nil {
 		return "", err
 	}
 
-	// TrimSpace removes the newline appended by Encode.
-	return strings.TrimSpace(b.String()), nil
+	// TrimSpace removes any trailing spaces or newlines.
+	return strings.TrimSpace(string(b)), nil
 }
 
 // Substring returns the portion of a string starting at the
