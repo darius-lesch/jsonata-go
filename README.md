@@ -21,7 +21,7 @@ This repository maintains **100% feature compliance with `jsonata-js` v2.2.2**, 
 
 ## Installation
 
-Requires **Go 1.22+**.
+Requires **Go 1.27+**.
 
 ```bash
 go get github.com/darius-lesch/jsonata-go/v2
