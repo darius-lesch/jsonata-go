@@ -54,7 +54,7 @@ const jsonString = `
 `
 
 func main() {
-	var data interface{}
+	var data any
 
 	// Decode JSON
 	if err := jsonv2.Unmarshal([]byte(jsonString), &data, jsonv1.DefaultOptionsV1()); err != nil {
