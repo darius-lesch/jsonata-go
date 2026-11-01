@@ -21,18 +21,17 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod' # Locks CI to the exact version used locally
+          go-version-file: "go.mod" # Locks CI to the exact version used locally
 
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: --version # ensures binary is available in PATH for pre-commit
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install pre-commit
         run: pip install pre-commit
