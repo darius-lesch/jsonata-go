@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - main
+      - develop
   push:
     branches:
       - main
+      - develop
 
 jobs:
   validate-and-test:
@@ -20,6 +22,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod' # Locks CI to the exact version used locally
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --version # ensures binary is available in PATH for pre-commit
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -43,3 +51,17 @@ jobs:
       # 2. Run the heavy execution (go test) stage
       - name: Execute pre-push stage
         run: pre-commit run --all-files --hook-stage pre-push --show-diff-on-failure
+
+      # 3. Race condition verification
+      - name: Run Tests with Race Detector
+        run: go test -v -race ./...
+
+      # 4. WebAssembly (WASM) build verification
+      - name: Verify WebAssembly Build
+        run: GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o /dev/null ./wasm/
+
+      # 5. CLI utilities build verification
+      - name: Verify CLI Tools Build
+        run: |
+          go build -o /dev/null ./jsonata-server
+          go build -o /dev/null ./jsonata-test
