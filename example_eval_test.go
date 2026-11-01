@@ -5,7 +5,8 @@
 package jsonata_test
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"log"
 
@@ -24,10 +25,10 @@ const jsonString = `
 
 func ExampleExpr_Eval() {
 
-	var data interface{}
+	var data any
 
 	// Decode JSON.
-	err := json.Unmarshal([]byte(jsonString), &data)
+	err := jsonv2.Unmarshal([]byte(jsonString), &data, jsonv1.DefaultOptionsV1())
 	if err != nil {
 		log.Fatal(err)
 	}

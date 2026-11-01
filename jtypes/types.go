@@ -30,7 +30,7 @@ var (
 	// TypeValue (golint)
 	TypeValue = reflect.TypeOf((*reflect.Value)(nil)).Elem()
 	// TypeInterface (golint)
-	TypeInterface = reflect.TypeOf((*interface{})(nil)).Elem()
+	TypeInterface = reflect.TypeOf((*any)(nil)).Elem()
 )
 
 // ErrUndefined (golint)
@@ -166,11 +166,11 @@ func (opt *OptionalString) Type() reflect.Type {
 // OptionalInterface (golint)
 type OptionalInterface struct {
 	isSet
-	Interface interface{}
+	Interface any
 }
 
 // NewOptionalInterface (golint)
-func NewOptionalInterface(value interface{}) OptionalInterface {
+func NewOptionalInterface(value any) OptionalInterface {
 	opt := OptionalInterface{}
 	opt.Set(reflect.ValueOf(value))
 	return opt

@@ -1,0 +1,66 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  validate-and-test:
+    name: Run Pre-Commit and Pre-Push Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod" # Locks CI to the exact version used locally
+
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      # Optional: Cache pre-commit environments to drastically speed up CI execution times
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # 1. Run the rapid code sanitization and linting stage
+      - name: Execute pre-commit stage
+        run: pre-commit run --all-files --hook-stage pre-commit --show-diff-on-failure
+
+      # 2. Run the heavy execution (go test) stage
+      - name: Execute pre-push stage
+        run: pre-commit run --all-files --hook-stage pre-push --show-diff-on-failure
+
+      # 3. Race condition verification
+      - name: Run Tests with Race Detector
+        run: go test -v -race ./...
+
+      # 4. WebAssembly (WASM) build verification
+      - name: Verify WebAssembly Build
+        run: GOOS=js GOARCH=wasm go build -ldflags="-s -w" -trimpath -o /dev/null ./wasm/
+
+      # 5. CLI utilities build verification
+      - name: Verify CLI Tools Build
+        run: |
+          go build -o /dev/null ./jsonata-server
+          go build -o /dev/null ./jsonata-test

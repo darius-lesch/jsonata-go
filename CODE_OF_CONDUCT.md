@@ -5,4 +5,3 @@ We are committed to providing a welcoming, respectful, and inclusive environment
 
 ## Enforcement
 Harassment, abusive language, or unacceptable behavior will not be tolerated. If you encounter or witness inappropriate behavior, please report it to the project maintainers. Project maintainers reserve the right to remove comments, issues, or access from anyone who violates these standards.
-

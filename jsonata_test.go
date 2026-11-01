@@ -5,10 +5,11 @@
 package jsonata
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -28,18 +29,18 @@ type testCase struct {
 	// Expression is either a single JSONata expression (type: string)
 	// or a slice of JSONata expressions (type: []string) that produce
 	// the same results.
-	Expression interface{}
+	Expression any
 
 	// Vars is a map of variables to use when evaluating the given
 	// expression(s).
-	Vars map[string]interface{}
+	Vars map[string]any
 
 	// Exts is a map of custom extensions to use when evaluating the
 	// given expression(s).
 	Exts map[string]Extension
 
 	// Output is the expected output for the given expression(s).
-	Output interface{}
+	Output any
 
 	// Error is the expected error for the given expression(s).
 	Error error
@@ -8095,17 +8096,57 @@ func must(t *testing.T, prefix string, err error) {
 	}
 }
 
-func readJSON(filename string) interface{} {
+func readJSON(filename string) any {
 
-	data, err := ioutil.ReadFile(filepath.Join("testdata", filename))
+	data, err := os.ReadFile(filepath.Join("testdata", filename))
 	if err != nil {
-		panicf("ioutil.ReadFile error: %s", err)
+		panicf("os.ReadFile error: %s", err)
 	}
 
-	var dest interface{}
-	if err = json.Unmarshal(data, &dest); err != nil {
-		panicf("json.Unmarshal error: %s", err)
+	var dest any
+	if err = jsonv2.Unmarshal(data, &dest, jsonv1.DefaultOptionsV1()); err != nil {
+		panicf("jsonv2.Unmarshal error: %s", err)
 	}
 
 	return dest
+}
+
+func TestEvalBytesWithOptions(t *testing.T) {
+	e := MustCompile(`{"total": $sum(orders.(price * quantity))}`)
+	inputJSON := []byte(`{"orders":[{"price":10,"quantity":3},{"price":0.5,"quantity":10}]}`)
+
+	// 1. Basic evaluation with custom indentation
+	out, err := e.EvalBytesWithOptions(inputJSON, jsontext.WithIndent("  "))
+	if err != nil {
+		t.Fatalf("EvalBytesWithOptions failed: %v", err)
+	}
+
+	expected := "{\n  \"total\": 35\n}"
+	if string(out) != expected {
+		t.Errorf("expected indented output:\n%s\ngot:\n%s", expected, string(out))
+	}
+
+	// 2. Deterministic option
+	eMultiKey := MustCompile(`{"z": 1, "a": 2, "m": 3}`)
+	outDet, err := eMultiKey.EvalBytesWithOptions([]byte(`{}`), jsonv2.Deterministic(true))
+	if err != nil {
+		t.Fatalf("EvalBytesWithOptions with Deterministic failed: %v", err)
+	}
+	expectedDet := `{"a":2,"m":3,"z":1}`
+	if string(outDet) != expectedDet {
+		t.Errorf("expected sorted keys %s, got %s", expectedDet, string(outDet))
+	}
+
+	// 3. Error on malformed input JSON
+	_, err = e.EvalBytesWithOptions([]byte(`invalid json`), jsontext.WithIndent("  "))
+	if err == nil {
+		t.Errorf("expected error on malformed JSON, got nil")
+	}
+
+	// 4. Undefined result returns ErrUndefined
+	eUndef := MustCompile(`missingKey`)
+	_, err = eUndef.EvalBytesWithOptions([]byte(`{}`), jsontext.WithIndent("  "))
+	if err != ErrUndefined {
+		t.Errorf("expected ErrUndefined, got %v", err)
+	}
 }

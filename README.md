@@ -21,7 +21,7 @@ This repository maintains **100% feature compliance with `jsonata-js` v2.2.2**, 
 
 ## Installation
 
-Requires **Go 1.22+**.
+Requires **Go 1.27+**.
 
 ```bash
 go get github.com/darius-lesch/jsonata-go/v2
@@ -35,7 +35,8 @@ go get github.com/darius-lesch/jsonata-go/v2
 package main
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"log"
 
@@ -53,10 +54,10 @@ const jsonString = `
 `
 
 func main() {
-	var data interface{}
+	var data any
 
 	// Decode JSON
-	if err := json.Unmarshal([]byte(jsonString), &data); err != nil {
+	if err := jsonv2.Unmarshal([]byte(jsonString), &data, jsonv1.DefaultOptionsV1()); err != nil {
 		log.Fatal(err)
 	}
 

@@ -5,11 +5,11 @@
 package jsonata
 
 import (
-	"encoding/json"
+	jsonv1 "encoding/json"
+	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/darius-lesch/jsonata-go/v2/jlib"
 	"github.com/darius-lesch/jsonata-go/v2/jparse"
@@ -48,7 +48,7 @@ func newGoCallableParam(typ reflect.Type) goCallableParam {
 		t: typ,
 	}
 
-	isOpt := reflect.PtrTo(typ).Implements(jtypes.TypeOptional)
+	isOpt := reflect.PointerTo(typ).Implements(jtypes.TypeOptional)
 	if isOpt {
 		o := reflect.New(typ).Interface().(jtypes.Optional)
 		p := newGoCallableParam(o.Type())
@@ -114,7 +114,7 @@ func newGoCallable(name string, ext Extension) (*goCallable, error) {
 
 var typeError = reflect.TypeOf((*error)(nil)).Elem()
 
-func validateGoCallableFunc(fn interface{}) error {
+func validateGoCallableFunc(fn any) error {
 
 	v := reflect.ValueOf(fn)
 
@@ -294,7 +294,7 @@ func (c *goCallable) validateArgTypes(argv []reflect.Value) ([]reflect.Value, er
 		// This is fine for most types but we need to restore
 		// pointer type Callables.
 		if v.Kind() == reflect.Struct &&
-			reflect.PtrTo(v.Type()).Implements(jtypes.TypeCallable) {
+			reflect.PointerTo(v.Type()).Implements(jtypes.TypeCallable) {
 			if v.CanAddr() {
 				v = v.Addr()
 			}
@@ -781,9 +781,9 @@ func (f *transformationCallable) clone(v reflect.Value) (reflect.Value, error) {
 		return undefined, err
 	}
 
-	var dest interface{}
-	d := json.NewDecoder(strings.NewReader(s))
-	if err = d.Decode(&dest); err != nil {
+	var dest any
+	// Direct unmarshal replaces the legacy json.NewDecoder pattern
+	if err = jsonv2.Unmarshal([]byte(s), &dest, jsonv1.DefaultOptionsV1()); err != nil {
 		return undefined, err
 	}
 
@@ -904,7 +904,7 @@ func newMatchCallable(name string, matches [][]string, indexes [][]int) jtypes.C
 }
 
 func (f *matchCallable) Call([]reflect.Value) (reflect.Value, error) {
-	return reflect.ValueOf(map[string]interface{}{
+	return reflect.ValueOf(map[string]any{
 		"match":  f.match,
 		"start":  f.start,
 		"end":    f.end,

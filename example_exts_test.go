@@ -17,14 +17,25 @@ import (
 // custom functions.
 //
 
+// titlecase converts each word in a string to title case.
+func titlecase(s string) string {
+	words := strings.Fields(s)
+	for i, w := range words {
+		if len(w) > 0 {
+			words[i] = strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+		}
+	}
+	return strings.Join(words, " ")
+}
+
 // exts defines a function named "titlecase" which maps to
-// the standard library function strings.Title. Any function,
-// from the standard library or otherwise, can be used to
-// extend JSONata, as long as it returns either one or two
-// arguments (the second argument must be an error).
+// a custom Go function. Any function, from the standard library
+// or otherwise, can be used to extend JSONata, as long as it
+// returns either one or two arguments (the second argument must
+// be an error).
 var exts = map[string]jsonata.Extension{
 	"titlecase": {
-		Func: strings.Title,
+		Func: titlecase,
 	},
 }
 
