@@ -7,7 +7,7 @@ repos:
   # COMMIT MESSAGE VALIDATION
   # ==========================================
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.2.0
+    rev: v4.5.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
@@ -57,9 +57,9 @@ repos:
         always_run: true
         stages: [pre-commit]
 
-  # ==========================================
-  # PRE-PUSH & PRE-MERGE
-  # ==========================================
+      # ==========================================
+      # PRE-PUSH & PRE-MERGE
+      # ==========================================
       - id: go-test
         name: go test
         entry: go test ./...
