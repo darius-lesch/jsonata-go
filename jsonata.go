@@ -31,7 +31,7 @@ type Extension struct {
 	// functionality and returns either one or two values.
 	// The second return value, if provided, must be an
 	// error.
-	Func interface{}
+	Func any
 
 	// UndefinedHandler is a function that determines how
 	// this extension handles undefined arguments. If
@@ -75,7 +75,7 @@ func RegisterExts(exts map[string]Extension) error {
 // Custom variables registered at the package level will be
 // available to all Expr objects. To register custom variables
 // with specific Expr objects, use the RegisterVars method.
-func RegisterVars(vars map[string]interface{}) error {
+func RegisterVars(vars map[string]any) error {
 
 	values, err := processVars(vars)
 	if err != nil {
@@ -134,7 +134,7 @@ func MustCompile(expr string) *Expr {
 //
 // Eval can be called multiple times, with different input
 // data if required.
-func (e *Expr) Eval(data interface{}) (interface{}, error) {
+func (e *Expr) Eval(data any) (any, error) {
 	input, ok := data.(reflect.Value)
 	if !ok {
 		input = reflect.ValueOf(data)
@@ -153,7 +153,7 @@ func (e *Expr) Eval(data interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("Eval returned a non-interface value")
 	}
 
-	if result.Kind() == reflect.Ptr && result.IsNil() {
+	if result.Kind() == reflect.Pointer && result.IsNil() {
 		return nil, nil
 	}
 
@@ -161,10 +161,12 @@ func (e *Expr) Eval(data interface{}) (interface{}, error) {
 }
 
 // EvalBytes is like Eval but it accepts and returns byte slices
-// instead of objects.
+// instead of objects. It uses jsonv1.DefaultOptionsV1() to maintain
+// backward compatibility. To pass custom options from encoding/json/v2,
+// use EvalBytesWithOptions.
 func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
 
-	var v interface{}
+	var v any
 
 	err := jsonv2.Unmarshal(data, &v, jsonv1.DefaultOptionsV1())
 	if err != nil {
@@ -177,6 +179,26 @@ func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
 	}
 
 	return jsonv2.Marshal(v, jsonv1.DefaultOptionsV1())
+}
+
+// EvalBytesWithOptions is like EvalBytes but accepts custom options from
+// encoding/json/v2 (and encoding/json/jsontext) for both unmarshaling
+// and marshaling (e.g. jsontext.WithIndent or jsonv2.Deterministic).
+func (e *Expr) EvalBytesWithOptions(data []byte, opts ...jsonv2.Options) ([]byte, error) {
+
+	var v any
+
+	err := jsonv2.Unmarshal(data, &v, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err = e.Eval(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonv2.Marshal(v, opts...)
 }
 
 // RegisterExts registers custom functions for use during
@@ -200,7 +222,7 @@ func (e *Expr) RegisterExts(exts map[string]Extension) error {
 // are only available to this Expr object. To make custom
 // variables available to all Expr objects, use the package
 // level RegisterVars function.
-func (e *Expr) RegisterVars(vars map[string]interface{}) error {
+func (e *Expr) RegisterVars(vars map[string]any) error {
 
 	values, err := processVars(vars)
 	if err != nil {
@@ -318,7 +340,7 @@ func processExts(exts map[string]Extension) (map[string]reflect.Value, error) {
 	return m, nil
 }
 
-func processVars(vars map[string]interface{}) (map[string]reflect.Value, error) {
+func processVars(vars map[string]any) (map[string]reflect.Value, error) {
 
 	var m map[string]reflect.Value
 
@@ -370,7 +392,7 @@ func validName(s string) bool {
 	return true
 }
 
-func validVar(v interface{}) bool {
+func validVar(v any) bool {
 	// TODO: Variable validation.
 	return true
 }

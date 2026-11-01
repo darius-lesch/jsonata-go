@@ -52,7 +52,7 @@ func doEval(exprStr, jsonStr string) (result string, err error) {
 		expr = compiled
 	}
 
-	var data interface{}
+	var data any
 	if jsonStr != "" {
 		if unmarshalErr := jsonv2.Unmarshal([]byte(jsonStr), &data, jsonv1.DefaultOptionsV1()); unmarshalErr != nil {
 			return "", fmt.Errorf("invalid JSON data: %w", unmarshalErr)

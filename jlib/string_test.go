@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if !reflect.PtrTo(typeMatchCallable).Implements(typeCallable) {
+	if !reflect.PointerTo(typeMatchCallable).Implements(typeCallable) {
 		fmt.Fprintln(os.Stderr, "*matchCallable is not a Callable. Aborting...")
 		os.Exit(1)
 	}

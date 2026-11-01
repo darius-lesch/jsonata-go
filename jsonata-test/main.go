@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -21,13 +20,13 @@ type testCase struct {
 	Expr        string
 	ExprFile    string `json:"expr-file"`
 	Category    string
-	Data        interface{}
+	Data        any
 	Dataset     string
 	Description string
 	TimeLimit   int
 	Depth       int
-	Bindings    map[string]interface{}
-	Result      interface{}
+	Bindings    map[string]any
+	Result      any
 	Undefined   bool
 	Error       string `json:"code"`
 	Token       string
@@ -57,7 +56,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	fmt.Fprintln(os.Stdout, "OK")
+	fmt.Println("OK")
 }
 
 // run runs all test cases
@@ -108,8 +107,8 @@ func run(testdir string, datadir string, filter string) error {
 		return fmt.Errorf("walk %s: ", err)
 	}
 
-	fmt.Fprintln(os.Stdout)
-	fmt.Fprintln(os.Stdout, numPassed, "passed", numFailed, "failed")
+	fmt.Println()
+	fmt.Println(numPassed, "passed", numFailed, "failed")
 	return nil
 }
 
@@ -195,7 +194,7 @@ func loadTestExprFile(testPath string, exprFileName string) (string, error) {
 	splitPath[len(splitPath)-1] = exprFileName
 	exprFilePath := strings.Join(splitPath, "/")
 
-	content, err := ioutil.ReadFile(exprFilePath)
+	content, err := os.ReadFile(exprFilePath)
 	if err != nil {
 		return "", err
 	}
@@ -251,25 +250,25 @@ func loadTestCases(path string) ([]testCase, error) {
 }
 
 func printTestCase(w io.Writer, tc testCase, name string) {
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Failed Test Case: %s\n", name)
+	_, _ = fmt.Fprintln(w)
+	_, _ = fmt.Fprintf(w, "Failed Test Case: %s\n", name)
 	switch {
 	case tc.Data != nil:
-		fmt.Fprintf(w, "Data: %v\n", tc.Data)
+		_, _ = fmt.Fprintf(w, "Data: %v\n", tc.Data)
 	case tc.Dataset != "":
-		fmt.Fprintf(w, "Dataset: %s\n", tc.Dataset)
+		_, _ = fmt.Fprintf(w, "Dataset: %s\n", tc.Dataset)
 	default:
-		fmt.Fprintln(w, "Data: N/A")
+		_, _ = fmt.Fprintln(w, "Data: N/A")
 	}
 	if tc.Error != "" {
-		fmt.Fprintf(w, "Expected error code: %v\n", tc.Error)
+		_, _ = fmt.Fprintf(w, "Expected error code: %v\n", tc.Error)
 	}
 	if len(tc.Bindings) > 0 {
-		fmt.Fprintf(w, "Bindings: %v\n", tc.Bindings)
+		_, _ = fmt.Fprintf(w, "Bindings: %v\n", tc.Bindings)
 	}
 }
 
-func eval(expression string, bindings map[string]interface{}, data interface{}) (interface{}, error) {
+func eval(expression string, bindings map[string]any, data any) (any, error) {
 	expr, err := jsonata.Compile(expression)
 	if err != nil {
 		return nil, err
@@ -283,7 +282,7 @@ func eval(expression string, bindings map[string]interface{}, data interface{}) 
 	return expr.Eval(data)
 }
 
-func equalResults(x, y interface{}) bool {
+func equalResults(x, y any) bool {
 	if reflect.DeepEqual(x, y) {
 		return true
 	}
@@ -324,8 +323,8 @@ func equalResults(x, y interface{}) bool {
 	return false
 }
 
-func readJSONFile(path string, dest interface{}) error {
-	b, err := ioutil.ReadFile(path)
+func readJSONFile(path string, dest any) error {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("ReadFile %s: %s", path, err)
 	}

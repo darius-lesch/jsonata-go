@@ -25,7 +25,7 @@ const jsonString = `
 
 func ExampleExpr_Eval() {
 
-	var data interface{}
+	var data any
 
 	// Decode JSON.
 	err := jsonv2.Unmarshal([]byte(jsonString), &data, jsonv1.DefaultOptionsV1())

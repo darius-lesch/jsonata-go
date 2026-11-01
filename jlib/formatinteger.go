@@ -36,9 +36,10 @@ func FormatInteger(value float64, picture string) (string, error) {
 	if value >= 1e46 {
 		if primary == "w" || primary == "W" || primary == "Ww" {
 			res := "ten billion trillion trillion trillion"
-			if primary == "W" {
+			switch primary {
+			case "W":
 				res = strings.ToUpper(res)
-			} else if primary == "Ww" {
+			case "Ww":
 				res = titleCaseWords(res)
 			}
 			return ordinalize(res, isOrdinal), nil
@@ -48,9 +49,10 @@ func FormatInteger(value float64, picture string) (string, error) {
 	n := int64(math.Trunc(value))
 
 	// 1. Spreadsheet Columns
-	if primary == "A" || primary == "a" {
+	switch primary {
+	case "A", "a":
 		return formatSpreadsheet(n, primary == "A"), nil
-	} else if primary == "α" {
+	case "α":
 		// D3130: The picture string must not start with a greek letter (since not supported or valid here)
 		return "", fmt.Errorf("D3130: The picture string is invalid")
 	}
@@ -63,9 +65,10 @@ func FormatInteger(value float64, picture string) (string, error) {
 	// 3. Words (Cardinal / Ordinal)
 	if primary == "w" || primary == "W" || primary == "Ww" {
 		res := formatWords(n, isOrdinal)
-		if primary == "W" {
+		switch primary {
+		case "W":
 			res = strings.ToUpper(res)
-		} else if primary == "Ww" {
+		case "Ww":
 			res = titleCaseWords(res)
 		}
 		return res, nil
@@ -139,10 +142,7 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 		if unicode.IsDigit(r) {
 			// Find the start of the contiguous digit block
 			curr := r
-			for {
-				if !unicode.IsDigit(curr - 1) {
-					break
-				}
+			for unicode.IsDigit(curr - 1) {
 				curr--
 				if r-curr >= 10 {
 					break
@@ -158,10 +158,7 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 	for _, r := range picture {
 		if unicode.IsDigit(r) {
 			curr := r
-			for {
-				if !unicode.IsDigit(curr - 1) {
-					break
-				}
+			for unicode.IsDigit(curr - 1) {
 				curr--
 				if r-curr >= 10 {
 					break
