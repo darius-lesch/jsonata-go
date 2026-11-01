@@ -7,17 +7,10 @@ package jlib
 
 import (
 	"fmt"
-	"math/rand"
 	"reflect"
-	"time"
 
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
-
-func init() {
-	// Seed random numbers for Random() and Shuffle().
-	rand.Seed(time.Now().UnixNano())
-}
 
 var typeBool = reflect.TypeOf((*bool)(nil)).Elem()
 var typeCallable = reflect.TypeOf((*jtypes.Callable)(nil)).Elem()

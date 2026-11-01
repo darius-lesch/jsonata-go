@@ -75,7 +75,7 @@ var (
 )
 
 // Decode the JSON.
-var data interface{}
+var data any
 
 func init() {
 	if err := jsonv2.Unmarshal(benchData, &data, jsonv1.DefaultOptionsV1()); err != nil {

@@ -90,7 +90,7 @@ func eval(input, expression string) (b []byte, status int, err error) {
 	}()
 
 	// Decode the JSON.
-	var data interface{}
+	var data any
 	if err := jsonv2.Unmarshal([]byte(input), &data, jsonv1.DefaultOptionsV1()); err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("input error: %s", err)
 	}
@@ -120,7 +120,7 @@ func eval(input, expression string) (b []byte, status int, err error) {
 	return b, http.StatusOK, nil
 }
 
-func jsonify(v interface{}) ([]byte, error) {
+func jsonify(v any) ([]byte, error) {
 	// Replaces legacy MarshalIndent and json.NewEncoder
 	b, err := jsonv2.Marshal(v, jsonv1.DefaultOptionsV1(), jsontext.WithIndent("    "))
 	if err != nil {

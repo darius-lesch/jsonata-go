@@ -24,7 +24,7 @@ import (
 // String converts a JSONata value to a string. Values that are
 // already strings are returned unchanged. Functions return empty
 // strings. All other types return their JSON representation.
-func String(value interface{}) (string, error) {
+func String(value any) (string, error) {
 
 	switch v := value.(type) {
 	case jtypes.Callable:

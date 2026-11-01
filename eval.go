@@ -1480,7 +1480,7 @@ func (s sequence) Value() reflect.Value {
 
 var (
 	typeSequence    = reflect.TypeOf((*sequence)(nil)).Elem()
-	typeSequencePtr = reflect.PtrTo(typeSequence)
+	typeSequencePtr = reflect.PointerTo(typeSequence)
 )
 
 func asSequence(v reflect.Value) (*sequence, bool) {
