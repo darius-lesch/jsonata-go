@@ -90,7 +90,7 @@ func Append(v1, v2 reflect.Value) (interface{}, error) {
 	results := reflect.MakeSlice(reflect.SliceOf(typeInterface), 0, len1+len2)
 
 	appendSlice := func(vs reflect.Value, length int) {
-		for i := 0; i < length; i++ {
+		for i := range length {
 			if item := vs.Index(i); item.IsValid() {
 				results = reflect.Append(results, item)
 			}
@@ -145,7 +145,7 @@ func sortNumberArray(v reflect.Value) []interface{} {
 	size := v.Len()
 	results := make([]interface{}, 0, size)
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if n, ok := jtypes.AsNumber(v.Index(i)); ok {
 			results = append(results, n)
 		}
@@ -162,7 +162,7 @@ func sortStringArray(v reflect.Value) []interface{} {
 	size := v.Len()
 	results := make([]interface{}, 0, size)
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if s, ok := jtypes.AsString(v.Index(i)); ok {
 			results = append(results, s)
 		}
@@ -179,7 +179,7 @@ func sortArrayFunc(v reflect.Value, fn jtypes.Callable) (interface{}, error) {
 	size := v.Len()
 	results := make([]interface{}, 0, size)
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if item := v.Index(i); item.CanInterface() {
 			results = append(results, item.Interface())
 		}
@@ -266,7 +266,7 @@ func Shuffle(v reflect.Value) interface{} {
 	length := arrayLen(v)
 	results := make([]interface{}, length)
 
-	for i := 0; i < length; i++ {
+	for i := range length {
 
 		j := rand.Intn(i + 1)
 
@@ -291,7 +291,7 @@ func Zip(vs ...reflect.Value) (interface{}, error) {
 		return nil, fmt.Errorf("cannot call zip with no arguments")
 	}
 
-	for i := 0; i < len(vs); i++ {
+	for i := range vs {
 
 		vs[i] = forceArray(jtypes.Resolve(vs[i]))
 		if !vs[i].IsValid() {
@@ -309,7 +309,7 @@ func Zip(vs ...reflect.Value) (interface{}, error) {
 
 		inner := make([]interface{}, len(vs))
 
-		for j := 0; j < len(vs); j++ {
+		for j := range vs {
 			v := vs[j].Index(i)
 			if v.IsValid() && v.CanInterface() {
 				inner[j] = v.Interface()
@@ -339,7 +339,7 @@ func arrayLen(v reflect.Value) int {
 	return 0
 }
 
-var typeInterface = reflect.TypeOf((*interface{})(nil)).Elem()
+var typeInterface = reflect.TypeFor[any]()
 
 func arrayify(v reflect.Value) reflect.Value {
 	switch {

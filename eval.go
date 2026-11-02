@@ -156,7 +156,7 @@ func evalNameArray(node *jparse.NameNode, data reflect.Value, env *environment) 
 	n := data.Len()
 	results := newSequence(0)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		v, err := evalName(node, data.Index(i), env)
 		if err != nil {
 			return undefined, err
@@ -418,7 +418,7 @@ func evalRange(node *jparse.RangeNode, data reflect.Value, env *environment) (re
 
 	results := reflect.MakeSlice(typeInterfaceSlice, size, size)
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		results.Index(i).Set(reflect.ValueOf(lhs))
 		lhs++
 	}
@@ -516,7 +516,7 @@ func evalObject(node *jparse.ObjectNode, data reflect.Value, env *environment) (
 		itemIndices := idx.items
 		if len(itemIndices) == 0 {
 			itemIndices = make([]int, nItems)
-			for j := 0; j < nItems; j++ {
+			for j := range nItems {
 				itemIndices[j] = j
 			}
 		}
@@ -574,7 +574,7 @@ func groupItemsByKey(obj *jparse.ObjectNode, items reflect.Value, env *environme
 			continue
 		}
 
-		for j := 0; j < nItems; j++ {
+		for j := range nItems {
 
 			v, err := eval(keyNode, items.Index(j), env)
 			if err != nil {
@@ -768,7 +768,7 @@ func applyFilter(filter jparse.Node, items reflect.Value, env *environment) (ref
 	nItems := items.Len()
 	results := reflect.MakeSlice(typeInterfaceSlice, 0, 0)
 
-	for i := 0; i < nItems; i++ {
+	for i := range nItems {
 
 		item := items.Index(i)
 
@@ -1479,7 +1479,7 @@ func (s sequence) Value() reflect.Value {
 }
 
 var (
-	typeSequence    = reflect.TypeOf((*sequence)(nil)).Elem()
+	typeSequence    = reflect.TypeFor[sequence]()
 	typeSequencePtr = reflect.PointerTo(typeSequence)
 )
 

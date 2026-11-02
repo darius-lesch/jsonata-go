@@ -115,7 +115,7 @@ func newGoCallable(name string, ext Extension) (*goCallable, error) {
 	}, nil
 }
 
-var typeError = reflect.TypeOf((*error)(nil)).Elem()
+var typeError = reflect.TypeFor[error]()
 
 func validateGoCallableFunc(fn any) error {
 
@@ -323,8 +323,8 @@ func (c *goCallable) validateArgTypes(argv []reflect.Value) ([]reflect.Value, er
 }
 
 var (
-	typeString    = reflect.TypeOf((*string)(nil)).Elem()
-	typeByteSlice = reflect.TypeOf((*[]byte)(nil)).Elem()
+	typeString    = reflect.TypeFor[string]()
+	typeByteSlice = reflect.TypeFor[[]byte]()
 )
 
 func processGoCallableArg(arg reflect.Value, param goCallableParam) (reflect.Value, bool) {
@@ -602,7 +602,7 @@ func (f *lambdaCallable) wrapVariadicArgs(argv []reflect.Value) []reflect.Value 
 	n := len(argv) - paramCount + 1
 	vars := reflect.MakeSlice(typeInterfaceSlice, n, n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		vars.Index(i).Set(argv[paramCount-1+i])
 	}
 
@@ -839,7 +839,7 @@ func (f *regexCallable) Call(argv []reflect.Value) (reflect.Value, error) {
 	return newMatchCallable(f.Name(), matches, indexes).Call(nil)
 }
 
-var typeRegexPtr = reflect.TypeOf((*regexp.Regexp)(nil))
+var typeRegexPtr = reflect.TypeFor[*regexp.Regexp]()
 
 func (f *regexCallable) ConvertTo(t reflect.Type) (reflect.Value, bool) {
 	switch t {

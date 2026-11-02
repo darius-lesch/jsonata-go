@@ -396,7 +396,7 @@ func (n *ObjectNode) optimize() (Node, error) {
 	var err error
 
 	for i := range n.Pairs {
-		for j := 0; j < 2; j++ {
+		for j := range 2 {
 			n.Pairs[i][j], err = n.Pairs[i][j].optimize()
 			if err != nil {
 				return nil, err
@@ -699,18 +699,19 @@ type Param struct {
 
 func (p Param) String() string {
 
-	s := p.Type.String()
+	var s strings.Builder
+	s.WriteString(p.Type.String())
 
 	if p.SubParams != nil {
-		s += "<"
+		s.WriteString("<")
 		for _, sub := range p.SubParams {
-			s += sub.String()
+			s.WriteString(sub.String())
 		}
-		s += ">"
+		s.WriteString(">")
 	}
 
-	s += p.Option.String()
-	return s
+	s.WriteString(p.Option.String())
+	return s.String()
 }
 
 func parseParams(s string) ([]Param, error) {
@@ -1120,7 +1121,7 @@ func extractSignature(p *parser) (string, bool) {
 		return "", false
 	}
 
-	sig := ""
+	var sig strings.Builder
 	depth := 1
 
 Loop:
@@ -1138,11 +1139,11 @@ Loop:
 			depth++
 		}
 
-		sig += p.token.Value
+		sig.WriteString(p.token.Value)
 	}
 
 	p.consume(typeSigEnd, true)
-	return sig, true
+	return sig.String(), true
 }
 
 // A PredicateNode represents a predicate expression.

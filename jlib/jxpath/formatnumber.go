@@ -257,10 +257,7 @@ func extractSubpictureParts(subpicture string, format *DecimalFormat) subpicture
 		return r != format.ExponentSeparator && format.isActive(r)
 	}
 
-	first := strings.IndexFunc(subpicture, isActive)
-	if first < 0 {
-		first = 0
-	}
+	first := max(strings.IndexFunc(subpicture, isActive), 0)
 
 	last := strings.LastIndexFunc(subpicture, isActive)
 	if last < 0 {
@@ -518,7 +515,7 @@ func getGroupSize(positions []int) int {
 	}
 
 	factor := gcdOf(positions)
-	for i := 0; i < len(positions); i++ {
+	for i := range positions {
 		if indexInt(positions, factor*(i+1)) == -1 {
 			return 0
 		}
@@ -623,7 +620,7 @@ func insertSeparatorsEvery(s string, sep rune, interval int) string {
 
 	for n > 0 {
 		pos := 0
-		for i := 0; i < interval; i++ {
+		for range interval {
 			_, w := utf8.DecodeLastRuneInString(s[:end])
 			pos += w
 		}
