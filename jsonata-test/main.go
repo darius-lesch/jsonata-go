@@ -128,7 +128,7 @@ func runTest(tc testCase, dataDir string, path string) (bool, error) {
 	// If this test has an associated dataset, load it
 	data := tc.Data
 	if tc.Dataset != "" {
-		var dest interface{}
+		var dest any
 		err := readJSONFile(filepath.Join(dataDir, tc.Dataset+".json"), &dest)
 		if err != nil {
 			return false, err

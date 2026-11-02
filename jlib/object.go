@@ -21,9 +21,9 @@ var typeInterfaceMap = reflect.MapOf(typeString, jtypes.TypeInterface)
 // map[string]interface{}. This is useful for performance
 // because direct map access is significantly faster than
 // the reflect functions MapKeys and MapIndex.
-func toInterfaceMap(v reflect.Value) (map[string]interface{}, bool) {
+func toInterfaceMap(v reflect.Value) (map[string]any, bool) {
 	if v.Type() == typeInterfaceMap && v.CanInterface() {
-		return v.Interface().(map[string]interface{}), true
+		return v.Interface().(map[string]any), true
 	}
 	return nil, false
 }
@@ -39,9 +39,9 @@ func toInterfaceMap(v reflect.Value) (map[string]interface{}, bool) {
 // arguments. The first argument is the value of a name/value
 // pair. The second and third arguments, if applicable, are
 // the value and the source object respectively.
-func Each(obj reflect.Value, fn jtypes.Callable) (interface{}, error) {
+func Each(obj reflect.Value, fn jtypes.Callable) (any, error) {
 
-	var each func(reflect.Value, jtypes.Callable) ([]interface{}, error)
+	var each func(reflect.Value, jtypes.Callable) ([]any, error)
 
 	obj = jtypes.Resolve(obj)
 
@@ -73,14 +73,14 @@ func Each(obj reflect.Value, fn jtypes.Callable) (interface{}, error) {
 	}
 }
 
-func eachMap(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
+func eachMap(v reflect.Value, fn jtypes.Callable) ([]any, error) {
 
 	size := v.Len()
 	if size == 0 {
 		return nil, nil
 	}
 
-	var results []interface{}
+	var results []any
 
 	argv := make([]reflect.Value, fn.ParamCount())
 
@@ -104,7 +104,7 @@ func eachMap(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
 
 		if res.IsValid() && res.CanInterface() {
 			if results == nil {
-				results = make([]interface{}, 0, size)
+				results = make([]any, 0, size)
 			}
 			results = append(results, res.Interface())
 		}
@@ -113,14 +113,14 @@ func eachMap(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
 	return results, nil
 }
 
-func eachStruct(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
+func eachStruct(v reflect.Value, fn jtypes.Callable) ([]any, error) {
 
 	size := v.NumField()
 	if size == 0 {
 		return nil, nil
 	}
 
-	var results []interface{}
+	var results []any
 
 	t := v.Type()
 	argv := make([]reflect.Value, fn.ParamCount())
@@ -151,7 +151,7 @@ func eachStruct(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
 
 		if res.IsValid() && res.CanInterface() {
 			if results == nil {
-				results = make([]interface{}, 0, size)
+				results = make([]any, 0, size)
 			}
 			results = append(results, res.Interface())
 		}
@@ -171,9 +171,9 @@ func eachStruct(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
 // arguments. The first argument is the value of a name/value
 // pair. The second and third arguments, if applicable, are
 // the value and the source object respectively.
-func Sift(obj reflect.Value, fn jtypes.Callable) (interface{}, error) {
+func Sift(obj reflect.Value, fn jtypes.Callable) (any, error) {
 
-	var sift func(reflect.Value, jtypes.Callable) (map[string]interface{}, error)
+	var sift func(reflect.Value, jtypes.Callable) (map[string]any, error)
 
 	obj = jtypes.Resolve(obj)
 
@@ -202,14 +202,14 @@ func Sift(obj reflect.Value, fn jtypes.Callable) (interface{}, error) {
 	return results, nil
 }
 
-func siftMap(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, error) {
+func siftMap(v reflect.Value, fn jtypes.Callable) (map[string]any, error) {
 
 	size := v.Len()
 	if size == 0 {
 		return nil, nil
 	}
 
-	var results map[string]interface{}
+	var results map[string]any
 
 	argv := make([]reflect.Value, fn.ParamCount())
 
@@ -246,7 +246,7 @@ func siftMap(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, error
 
 		if Boolean(res) {
 			if results == nil {
-				results = make(map[string]interface{}, size)
+				results = make(map[string]any, size)
 			}
 			results[key] = val.Interface()
 		}
@@ -255,14 +255,14 @@ func siftMap(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, error
 	return results, nil
 }
 
-func siftStruct(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, error) {
+func siftStruct(v reflect.Value, fn jtypes.Callable) (map[string]any, error) {
 
 	size := v.NumField()
 	if size == 0 {
 		return nil, nil
 	}
 
-	var results map[string]interface{}
+	var results map[string]any
 
 	t := v.Type()
 	argv := make([]reflect.Value, fn.ParamCount())
@@ -298,7 +298,7 @@ func siftStruct(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, er
 
 		if Boolean(res) {
 			if results == nil {
-				results = make(map[string]interface{}, size)
+				results = make(map[string]any, size)
 			}
 			results[key] = val.Interface()
 		}
@@ -315,7 +315,7 @@ func siftStruct(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, er
 // unexported fields are ignored. And if obj is an array,
 // Keys returns the unique set of names from each object
 // in the array.
-func Keys(obj reflect.Value) (interface{}, error) {
+func Keys(obj reflect.Value) (any, error) {
 
 	results, err := keys(obj)
 	if err != nil {
@@ -373,7 +373,7 @@ func keysMap(v reflect.Value) ([]string, error) {
 	return results, nil
 }
 
-func keysMapFast(m map[string]interface{}) []string {
+func keysMapFast(m map[string]any) []string {
 
 	results := make([]string, 0, len(m))
 	for key := range m {
@@ -458,10 +458,10 @@ func keysArray(v reflect.Value) ([]string, error) {
 //
 // objs must be an array of maps or structs. Maps must have
 // keys of type string. Unexported struct fields are ignored.
-func Merge(objs reflect.Value) (interface{}, error) {
+func Merge(objs reflect.Value) (any, error) {
 
 	var size int
-	var merge func(map[string]interface{}, reflect.Value) error
+	var merge func(map[string]any, reflect.Value) error
 
 	objs = jtypes.Resolve(objs)
 
@@ -489,7 +489,7 @@ func Merge(objs reflect.Value) (interface{}, error) {
 		return nil, fmt.Errorf("argument must be an object or an array of objects")
 	}
 
-	results := make(map[string]interface{}, size)
+	results := make(map[string]any, size)
 	if err := merge(results, objs); err != nil {
 		return nil, err
 	}
@@ -497,7 +497,7 @@ func Merge(objs reflect.Value) (interface{}, error) {
 	return results, nil
 }
 
-func mergeMap(dest map[string]interface{}, src reflect.Value) error {
+func mergeMap(dest map[string]any, src reflect.Value) error {
 
 	if m, ok := toInterfaceMap(src); ok {
 		mergeMapFast(dest, m)
@@ -519,7 +519,7 @@ func mergeMap(dest map[string]interface{}, src reflect.Value) error {
 	return nil
 }
 
-func mergeMapFast(dest, src map[string]interface{}) {
+func mergeMapFast(dest, src map[string]any) {
 	for k, v := range src {
 		if v != nil {
 			dest[k] = v
@@ -527,7 +527,7 @@ func mergeMapFast(dest, src map[string]interface{}) {
 	}
 }
 
-func mergeStruct(dest map[string]interface{}, src reflect.Value) error {
+func mergeStruct(dest map[string]any, src reflect.Value) error {
 
 	t := src.Type()
 
@@ -547,9 +547,9 @@ func mergeStruct(dest map[string]interface{}, src reflect.Value) error {
 	return nil
 }
 
-func mergeArray(dest map[string]interface{}, src reflect.Value) error {
+func mergeArray(dest map[string]any, src reflect.Value) error {
 
-	var merge func(map[string]interface{}, reflect.Value) error
+	var merge func(map[string]any, reflect.Value) error
 
 	for i := 0; i < src.Len(); i++ {
 
@@ -573,9 +573,9 @@ func mergeArray(dest map[string]interface{}, src reflect.Value) error {
 }
 
 // Spread (golint)
-func Spread(v reflect.Value) (interface{}, error) {
+func Spread(v reflect.Value) (any, error) {
 
-	var results []interface{}
+	var results []any
 
 	switch {
 	case jtypes.IsMap(v):
@@ -586,7 +586,7 @@ func Spread(v reflect.Value) (interface{}, error) {
 				return nil, fmt.Errorf("object key must evaluate to a string, got %v (%s)", k, k.Kind())
 			}
 			if v := v.MapIndex(k); v.CanInterface() {
-				results = append(results, map[string]interface{}{
+				results = append(results, map[string]any{
 					k.String(): v.Interface(),
 				})
 			}
@@ -597,7 +597,7 @@ func Spread(v reflect.Value) (interface{}, error) {
 			k := v.Type().Field(i).Name
 			v := v.FieldByIndex([]int{i})
 			if v.CanInterface() {
-				results = append(results, map[string]interface{}{
+				results = append(results, map[string]any{
 					k: v.Interface(),
 				})
 			}
@@ -610,9 +610,9 @@ func Spread(v reflect.Value) (interface{}, error) {
 				return nil, err
 			}
 			switch res := res.(type) {
-			case []interface{}: // Check for []interface{} first because it will also match interface{}.
+			case []any: // Check for []interface{} first because it will also match interface{}.
 				results = append(results, res...)
-			case interface{}:
+			case any:
 				results = append(results, res)
 			}
 		}
