@@ -125,13 +125,6 @@ func Single(v reflect.Value, f jtypes.Callable) (interface{}, error) {
 	}
 }
 
-func clamp(n, min, max int) int {
-	switch {
-	case n < min:
-		return min
-	case n > max:
-		return max
-	default:
-		return n
-	}
+func clamp(n, minVal, maxVal int) int {
+	return min(max(n, minVal), maxVal)
 }

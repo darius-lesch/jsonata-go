@@ -97,8 +97,8 @@ func Substring(s string, start int, length jtypes.OptionalInt) string {
 // the first occurrence of the given substring. If the substring
 // is not present, SubstringBefore returns the full string.
 func SubstringBefore(s, substr string) string {
-	if i := strings.Index(s, substr); i >= 0 {
-		return s[:i]
+	if before, _, ok := strings.Cut(s, substr); ok {
+		return before
 	}
 	return s
 }
@@ -107,8 +107,8 @@ func SubstringBefore(s, substr string) string {
 // the first occurrence of the given substring. If the substring
 // is not present, SubstringAfter returns the full string.
 func SubstringAfter(s, substr string) string {
-	if i := strings.Index(s, substr); i >= 0 {
-		return s[i+len(substr):]
+	if _, after, ok := strings.Cut(s, substr); ok {
+		return after
 	}
 	return s
 }
@@ -628,28 +628,28 @@ func callMatchFunc(fn jtypes.Callable, argv []reflect.Value, matches []match) ([
 
 func expandReplaceString(s string, m match) string {
 
-	var result string
+	var result strings.Builder
 
 Loop:
 	for {
 		pos := strings.IndexRune(s, '$')
 		if pos == -1 {
-			result += s
+			result.WriteString(s)
 			break
 		}
 
-		result += s[:pos]
+		result.WriteString(s[:pos])
 		s = s[pos+1:]
 
 		if len(s) == 0 {
-			result += "$"
+			result.WriteString("$")
 			break
 		}
 
 		r, _ := utf8.DecodeRuneInString(s)
 
 		if r == '$' || r < '0' || r > '9' {
-			result += "$"
+			result.WriteString("$")
 			if r == '$' {
 				s = s[1:]
 			}
@@ -658,7 +658,7 @@ Loop:
 
 		if r == '0' {
 			// $0 represents the full matched text.
-			result += m.value
+			result.WriteString(m.value)
 			s = s[1:]
 			continue
 		}
@@ -679,7 +679,7 @@ Loop:
 			// index N-1.
 			index := indexes[i] - 1
 			if index < len(m.groups) {
-				result += m.groups[index]
+				result.WriteString(m.groups[index])
 				s = s[i+1:]
 				continue Loop
 			}
@@ -688,7 +688,7 @@ Loop:
 		s = s[1:]
 	}
 
-	return result
+	return result.String()
 }
 
 func callReplaceFunc(f jtypes.Callable, m match) (string, error) {

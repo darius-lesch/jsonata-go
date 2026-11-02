@@ -12,10 +12,10 @@ import (
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
-var typeBool = reflect.TypeOf((*bool)(nil)).Elem()
-var typeCallable = reflect.TypeOf((*jtypes.Callable)(nil)).Elem()
-var typeString = reflect.TypeOf((*string)(nil)).Elem()
-var typeNumber = reflect.TypeOf((*float64)(nil)).Elem()
+var typeBool = reflect.TypeFor[bool]()
+var typeCallable = reflect.TypeFor[jtypes.Callable]()
+var typeString = reflect.TypeFor[string]()
+var typeNumber = reflect.TypeFor[float64]()
 
 // StringNumberBool (golint)
 type StringNumberBool reflect.Value

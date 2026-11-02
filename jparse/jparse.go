@@ -364,7 +364,7 @@ func initBindingPowers(tokenTypes [][]tokenType) [ledCount]int {
 // have a binding power.
 func validateBindingPowers(bps [ledCount]int) {
 
-	for tt := tokenType(0); tt < ledCount; tt++ {
+	for tt := range ledCount {
 		if leds[tt] != nil && bps[tt] == 0 {
 			panicf("validateBindingPowers: token type %d [%s] does not have a binding power", tt, tt)
 		}

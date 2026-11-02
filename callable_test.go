@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	typeStringRegex    = reflect.TypeOf((*stringRegex)(nil)).Elem()
-	typeOptionalString = reflect.TypeOf((*jtypes.OptionalString)(nil)).Elem()
+	typeStringRegex    = reflect.TypeFor[stringRegex]()
+	typeOptionalString = reflect.TypeFor[jtypes.OptionalString]()
 )
 
 // stringRegex is a Variant type that accepts string
@@ -93,7 +93,7 @@ type newGoCallableTest struct {
 
 func TestNewGoCallable(t *testing.T) {
 
-	typeInt := reflect.TypeOf((*int)(nil)).Elem()
+	typeInt := reflect.TypeFor[int]()
 
 	testNewGoCallable(t, []newGoCallableTest{
 		{
@@ -598,11 +598,11 @@ func TestProcessGoCallableArg(t *testing.T) {
 
 	re := regexp.MustCompile("ab+")
 
-	typeInt := reflect.TypeOf((*int)(nil)).Elem()
-	typeFloat64 := reflect.TypeOf((*float64)(nil)).Elem()
-	typeBool := reflect.TypeOf((*bool)(nil)).Elem()
-	typeString := reflect.TypeOf((*string)(nil)).Elem()
-	typeByteSlice := reflect.TypeOf((*[]byte)(nil)).Elem()
+	typeInt := reflect.TypeFor[int]()
+	typeFloat64 := reflect.TypeFor[float64]()
+	typeBool := reflect.TypeFor[bool]()
+	typeString := reflect.TypeFor[string]()
+	typeByteSlice := reflect.TypeFor[[]byte]()
 
 	testProcessGoCallableArgs(t, []goCallableArgTest{
 
@@ -2604,7 +2604,7 @@ func testRegexCallable(t *testing.T, tests []regexCallableTest) {
 
 func TestCallableParamCount(t *testing.T) {
 
-	typeInt := reflect.TypeOf((*int)(nil)).Elem()
+	typeInt := reflect.TypeFor[int]()
 
 	tests := []struct {
 		Callable jtypes.Callable
