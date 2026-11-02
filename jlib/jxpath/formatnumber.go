@@ -129,9 +129,8 @@ func FormatNumber(value float64, picture string, format DecimalFormat) (string, 
 	if math.IsNaN(value) {
 		return vars.Prefix + format.NaN + vars.Suffix, nil
 	}
-	if math.IsInf(value, 0) {
-		return vars.Prefix + format.Infinity + vars.Suffix, nil
-	}
+
+	value = math.Abs(value)
 
 	switch vars.NumberType {
 	case typePercent:
@@ -140,8 +139,12 @@ func FormatNumber(value float64, picture string, format DecimalFormat) (string, 
 		value *= 1000
 	}
 
+	if math.IsInf(value, 0) {
+		return vars.Prefix + format.Infinity + vars.Suffix, nil
+	}
+
 	exponent := 0
-	if vars.MinExponentSize != 0 {
+	if vars.MinExponentSize != 0 && value != 0 {
 
 		maxMantissa := math.Pow(10, float64(vars.ScalingFactor))
 		minMantissa := math.Pow(10, float64(vars.ScalingFactor-1))
