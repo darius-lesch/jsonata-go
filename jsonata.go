@@ -5,7 +5,6 @@
 package jsonata
 
 import (
-	jsonv1 "encoding/json"
 	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
@@ -161,24 +160,11 @@ func (e *Expr) Eval(data any) (any, error) {
 }
 
 // EvalBytes is like Eval but it accepts and returns byte slices
-// instead of objects. It uses jsonv1.DefaultOptionsV1() to maintain
-// backward compatibility. To pass custom options from encoding/json/v2,
-// use EvalBytesWithOptions.
+// instead of objects. It uses encoding/json/v2 defaults with
+// jsonv2.Deterministic(true) for reproducible key ordering. To pass
+// custom options (or use unsorted defaults), use EvalBytesWithOptions.
 func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
-
-	var v any
-
-	err := jsonv2.Unmarshal(data, &v, jsonv1.DefaultOptionsV1())
-	if err != nil {
-		return nil, err
-	}
-
-	v, err = e.Eval(v)
-	if err != nil {
-		return nil, err
-	}
-
-	return jsonv2.Marshal(v, jsonv1.DefaultOptionsV1())
+	return e.EvalBytesWithOptions(data, jsonv2.Deterministic(true))
 }
 
 // EvalBytesWithOptions is like EvalBytes but accepts custom options from

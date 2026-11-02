@@ -6,7 +6,7 @@ package jlib
 
 import (
 	"encoding/base64"
-	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"fmt"
 	"math"
@@ -19,6 +19,13 @@ import (
 
 	"github.com/darius-lesch/jsonata-go/v2/jlib/jxpath"
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
+)
+
+var stringMarshalOpts = jsonv2.JoinOptions(
+	jsonv2.Deterministic(true),
+	jsonv2.WithMarshalers(jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, _ jtypes.Callable) error {
+		return enc.WriteToken(jsontext.String(""))
+	})),
 )
 
 // String converts a JSONata value to a string. Values that are
@@ -41,21 +48,20 @@ func String(value any) (string, error) {
 		s := fmt.Sprintf("%.14g", v)
 		clean, _ := strconv.ParseFloat(s, 64)
 
-		b, err := jsonv2.Marshal(clean, jsonv1.DefaultOptionsV1())
+		b, err := jsonv2.Marshal(clean)
 		if err != nil {
 			return "", err
 		}
-		return strings.TrimSpace(string(b)), nil
+		return string(b), nil
 	}
 
 	// TODO: Round numbers to 13dps to match jsonata-js.
-	b, err := jsonv2.Marshal(value, jsonv1.DefaultOptionsV1())
+	b, err := jsonv2.Marshal(value, stringMarshalOpts)
 	if err != nil {
 		return "", err
 	}
 
-	// TrimSpace removes any trailing spaces or newlines.
-	return strings.TrimSpace(string(b)), nil
+	return string(b), nil
 }
 
 // Substring returns the portion of a string starting at the

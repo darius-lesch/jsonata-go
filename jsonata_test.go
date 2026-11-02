@@ -5,7 +5,6 @@
 package jsonata
 
 import (
-	jsonv1 "encoding/json"
 	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"errors"
@@ -5138,6 +5137,7 @@ func TestFuncString(t *testing.T) {
 					"null":null,
 					"boolean": false,
 					"function": $sum,
+					"eval": $eval,
 					"lambda": function(){true},
 					"object": {
 						"str": "another",
@@ -5146,8 +5146,12 @@ func TestFuncString(t *testing.T) {
 					"array": []
 				})`,
 			// TODO: Can we get this to print in field order like jsonata-js?
-			Output: `{"array":[],"boolean":false,"function":"","lambda":"","null":null,"number":39.4,"object":{"lambda2":"","str":"another"},"string":"hello"}`,
+			Output: `{"array":[],"boolean":false,"eval":"","function":"","lambda":"","null":null,"number":39.4,"object":{"lambda2":"","str":"another"},"string":"hello"}`,
 			//Output: `{"string":"hello","number":39.4,"null":null,"boolean":false,"function":"","lambda":"","object":{"str":"another","lambda2":""},"array":[]}`,
+		},
+		{
+			Expression: `$string({"html": "<b>a & b</b>"})`,
+			Output:     `{"html":"<b>a & b</b>"}`,
 		},
 		{
 			Expression: `$string(1/0)`,
@@ -6996,6 +7000,13 @@ func TestTransformOperator(t *testing.T) {
 			},
 		},
 		{
+			Expression: `{"a": 1, "fn": function($x){$x}} ~> |$|{"a": 2}|`,
+			Output: map[string]interface{}{
+				"a":  float64(2),
+				"fn": "",
+			},
+		},
+		{
 			Expression: `$ ~> |foo.bar|{"Description":"blah"}|`,
 			Output:     testdata.account,
 		},
@@ -8104,11 +8115,48 @@ func readJSON(filename string) any {
 	}
 
 	var dest any
-	if err = jsonv2.Unmarshal(data, &dest, jsonv1.DefaultOptionsV1()); err != nil {
+	if err = jsonv2.Unmarshal(data, &dest); err != nil {
 		panicf("jsonv2.Unmarshal error: %s", err)
 	}
 
 	return dest
+}
+
+func TestEvalBytes(t *testing.T) {
+	// 1. Deterministic multi-key marshaling by default
+	eMultiKey := MustCompile(`{"z": 1, "a": 2, "m": 3}`)
+	out, err := eMultiKey.EvalBytes([]byte(`{}`))
+	if err != nil {
+		t.Fatalf("EvalBytes failed: %v", err)
+	}
+	expected := `{"a":2,"m":3,"z":1}`
+	if string(out) != expected {
+		t.Errorf("expected sorted keys %s, got %s", expected, string(out))
+	}
+
+	// 2. Native json/v2 unescaped HTML characters (<, >, &)
+	eHTML := MustCompile(`{"tag": tag}`)
+	outHTML, err := eHTML.EvalBytes([]byte(`{"tag":"<script>&</script>"}`))
+	if err != nil {
+		t.Fatalf("EvalBytes with HTML chars failed: %v", err)
+	}
+	expectedHTML := `{"tag":"<script>&</script>"}`
+	if string(outHTML) != expectedHTML {
+		t.Errorf("expected unescaped HTML %s, got %s", expectedHTML, string(outHTML))
+	}
+
+	// 3. Error on malformed input JSON
+	_, err = eMultiKey.EvalBytes([]byte(`invalid json`))
+	if err == nil {
+		t.Errorf("expected error on malformed JSON, got nil")
+	}
+
+	// 4. Undefined result returns ErrUndefined
+	eUndef := MustCompile(`missingKey`)
+	_, err = eUndef.EvalBytes([]byte(`{}`))
+	if err != ErrUndefined {
+		t.Errorf("expected ErrUndefined, got %v", err)
+	}
 }
 
 func TestEvalBytesWithOptions(t *testing.T) {

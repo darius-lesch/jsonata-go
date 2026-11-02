@@ -107,6 +107,13 @@ func TestString(t *testing.T) {
 			Output: "",
 		},
 		{
+			Input: map[string]interface{}{
+				"fn":   &matchCallable{},
+				"html": "<script>&</script>",
+			},
+			Output: `{"fn":"","html":"<script>&</script>"}`,
+		},
+		{
 			Input: math.Inf(0),
 			Error: &jlib.Error{
 				Func: "string",
