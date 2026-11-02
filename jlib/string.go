@@ -247,7 +247,7 @@ func Join(values reflect.Value, separator jtypes.OptionalString) (string, error)
 //
 // The optional third argument specifies the maximum number
 // of matches to return. By default, Match returns all matches.
-func Match(s string, pattern jtypes.Callable, limit jtypes.OptionalInt) ([]map[string]interface{}, error) {
+func Match(s string, pattern jtypes.Callable, limit jtypes.OptionalInt) ([]map[string]any, error) {
 
 	if limit.Int < 0 {
 		return nil, fmt.Errorf("third argument of function match must evaluate to a positive number")
@@ -263,10 +263,10 @@ func Match(s string, pattern jtypes.Callable, limit jtypes.OptionalInt) ([]map[s
 		return nil, err
 	}
 
-	result := make([]map[string]interface{}, len(matches))
+	result := make([]map[string]any, len(matches))
 
 	for i, m := range matches {
-		result[i] = map[string]interface{}{
+		result[i] = map[string]any{
 			"match":  m.value,
 			"index":  m.indexes[0],
 			"groups": m.groups,
@@ -693,7 +693,7 @@ Loop:
 
 func callReplaceFunc(f jtypes.Callable, m match) (string, error) {
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"match":  m.value,
 		"index":  m.indexes[0],
 		"groups": m.groups,

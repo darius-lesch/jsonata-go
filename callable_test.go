@@ -86,7 +86,7 @@ func (badOptional2) Type() reflect.Type { return typeOptionalString }
 
 type newGoCallableTest struct {
 	Name   string
-	Func   interface{}
+	Func   any
 	Result *goCallable
 	Fail   bool
 }
@@ -309,9 +309,9 @@ func testNewGoCallable(t *testing.T, tests []newGoCallableTest) {
 type goCallableTest struct {
 	Name      string
 	Ext       Extension
-	Context   interface{}
-	Args      []interface{}
-	Output    interface{}
+	Context   any
+	Args      []any
+	Output    any
 	Error     error
 	Undefined bool
 }
@@ -324,7 +324,7 @@ func TestGoCallable(t *testing.T) {
 			Ext: Extension{
 				Func: func(string, int) int { return 0 },
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 			},
 			Error: &ArgCountError{
@@ -351,7 +351,7 @@ func TestGoCallable(t *testing.T) {
 			Ext: Extension{
 				Func: func(string) int { return 0 },
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 				"world",
 			},
@@ -367,7 +367,7 @@ func TestGoCallable(t *testing.T) {
 			Ext: Extension{
 				Func: func(string) int { return 0 },
 			},
-			Args: []interface{}{
+			Args: []any{
 				65,
 			},
 			Error: &ArgTypeError{
@@ -381,7 +381,7 @@ func TestGoCallable(t *testing.T) {
 			Ext: Extension{
 				Func: func(...string) int { return 0 },
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 				"world",
 				3.14159,
@@ -430,7 +430,7 @@ func TestGoCallable(t *testing.T) {
 					return strings.Repeat(s, n)
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"*",
 				5,
 			},
@@ -448,7 +448,7 @@ func TestGoCallable(t *testing.T) {
 				},
 			},
 			Context: "x",
-			Args: []interface{}{
+			Args: []any{
 				3,
 			},
 			Output: "xxx",
@@ -462,7 +462,7 @@ func TestGoCallable(t *testing.T) {
 					return nums
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				3,
 				0,
 				2,
@@ -489,17 +489,17 @@ func TestGoCallable(t *testing.T) {
 			// Optional parameter (set)
 			Name: "optional_set",
 			Ext: Extension{
-				Func: func(in jtypes.OptionalInt) interface{} {
-					return map[string]interface{}{
+				Func: func(in jtypes.OptionalInt) any {
+					return map[string]any{
 						"set":   in.IsSet(),
 						"value": in.Int,
 					}
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				100.0,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"set":   true,
 				"value": 100,
 			},
@@ -508,14 +508,14 @@ func TestGoCallable(t *testing.T) {
 			// Optional parameter (not set)
 			Name: "optional_notset",
 			Ext: Extension{
-				Func: func(in jtypes.OptionalInt) interface{} {
-					return map[string]interface{}{
+				Func: func(in jtypes.OptionalInt) any {
+					return map[string]any{
 						"set":   in.IsSet(),
 						"value": in.Int,
 					}
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"set":   false,
 				"value": 0,
 			},
@@ -528,7 +528,7 @@ func TestGoCallable(t *testing.T) {
 					return f.Name()
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				&undefinedCallable{
 					callableName: callableName{
 						name: "test",
@@ -544,7 +544,7 @@ func testGoCallable(t *testing.T, tests []goCallableTest) {
 
 	for _, test := range tests {
 
-		var output interface{}
+		var output any
 		var argv []reflect.Value
 
 		fn, err := newGoCallable(test.Name, test.Ext)
@@ -587,10 +587,10 @@ func testGoCallable(t *testing.T, tests []goCallableTest) {
 }
 
 type goCallableArgTest struct {
-	Input   interface{}
+	Input   any
 	Param   goCallableParam
-	Output  interface{}
-	Compare func(interface{}, interface{}) bool
+	Output  any
+	Compare func(any, any) bool
 	Fail    bool
 }
 
@@ -848,20 +848,20 @@ func TestProcessGoCallableArg(t *testing.T) {
 			Output:  reflect.ValueOf(false),
 		},
 		{
-			Input: []interface{}{},
+			Input: []any{},
 			Param: goCallableParam{
 				t: jtypes.TypeValue,
 			},
 			Compare: equalReflectValue,
-			Output:  reflect.ValueOf([]interface{}{}),
+			Output:  reflect.ValueOf([]any{}),
 		},
 		{
-			Input: map[string]interface{}{},
+			Input: map[string]any{},
 			Param: goCallableParam{
 				t: jtypes.TypeValue,
 			},
 			Compare: equalReflectValue,
-			Output:  reflect.ValueOf(map[string]interface{}{}),
+			Output:  reflect.ValueOf(map[string]any{}),
 		},
 		{
 			Param: goCallableParam{
@@ -1023,7 +1023,7 @@ func testProcessGoCallableArgs(t *testing.T, tests []goCallableArgTest) {
 
 		res, ok := processGoCallableArg(reflect.ValueOf(test.Input), test.Param)
 
-		var output interface{}
+		var output any
 		if res.IsValid() && res.CanInterface() {
 			output = res.Interface()
 		}
@@ -1043,7 +1043,7 @@ func testProcessGoCallableArgs(t *testing.T, tests []goCallableArgTest) {
 	}
 }
 
-func equalStringRegex(in1, in2 interface{}) bool {
+func equalStringRegex(in1, in2 any) bool {
 
 	v1, ok := in1.(stringRegex)
 	if !ok {
@@ -1058,7 +1058,7 @@ func equalStringRegex(in1, in2 interface{}) bool {
 	return reflect.DeepEqual(reflect.Value(v1).Interface(), reflect.Value(v2).Interface())
 }
 
-func equalReflectValue(in1, in2 interface{}) bool {
+func equalReflectValue(in1, in2 any) bool {
 
 	v1, ok := in1.(reflect.Value)
 	if !ok {
@@ -1079,10 +1079,10 @@ type lambdaCallableTest struct {
 	Params     []jparse.Param
 	Body       jparse.Node
 	ParamNames []string
-	Args       []interface{}
-	Vars       map[string]interface{}
-	Context    interface{}
-	Output     interface{}
+	Args       []any
+	Vars       map[string]any
+	Context    any
+	Output     any
 	Error      error
 	Undefined  bool
 }
@@ -1104,7 +1104,7 @@ func TestLambdaCallable(t *testing.T) {
 				"x",
 				"y",
 			},
-			Args: []interface{}{
+			Args: []any{
 				3.6,
 				100,
 			},
@@ -1116,7 +1116,7 @@ func TestLambdaCallable(t *testing.T) {
 			Body: &jparse.VariableNode{
 				Name: "x",
 			},
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"x": "marks the spot",
 			},
 			Output: "marks the spot",
@@ -1131,10 +1131,10 @@ func TestLambdaCallable(t *testing.T) {
 			ParamNames: []string{
 				"x",
 			},
-			Args: []interface{}{
+			Args: []any{
 				100,
 			},
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"x": "marks the spot",
 			},
 			Output: 100,
@@ -1149,7 +1149,7 @@ func TestLambdaCallable(t *testing.T) {
 			ParamNames: []string{
 				"x",
 			},
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"x": "marks the spot",
 			},
 			Undefined: true,
@@ -1166,7 +1166,7 @@ func TestLambdaCallable(t *testing.T) {
 			Name:  "typed",
 			Body:  &jparse.NumberNode{},
 			Typed: true,
-			Args: []interface{}{
+			Args: []any{
 				1,
 				2,
 			},
@@ -1201,7 +1201,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeAny,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"world",
 			},
 			Context: "hello",
@@ -1227,7 +1227,7 @@ func TestLambdaCallable(t *testing.T) {
 					Option: jparse.ParamOptional,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				100,
 			},
 			Undefined: true,
@@ -1249,7 +1249,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeAny,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				0,
 			},
 			Error: &ArgCountError{
@@ -1275,7 +1275,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeAny,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				0,
 				1,
 				2,
@@ -1301,7 +1301,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeString,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 			},
 			Output: "hello",
@@ -1319,7 +1319,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeString,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				0,
 			},
 			Error: &ArgTypeError{
@@ -1342,7 +1342,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeNumber,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				100,
 			},
 			Output: 100,
@@ -1360,7 +1360,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeNumber,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				false,
 			},
 			Error: &ArgTypeError{
@@ -1383,7 +1383,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeBool,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				true,
 			},
 			Output: true,
@@ -1401,7 +1401,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeBool,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				null,
 			},
 			Error: &ArgTypeError{
@@ -1426,7 +1426,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeFunc,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				&undefinedCallable{},
 			},
 			Undefined: true,
@@ -1444,7 +1444,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeFunc,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 			},
 			Error: &ArgTypeError{
@@ -1467,14 +1467,14 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeArray,
 				},
 			},
-			Args: []interface{}{
-				[]interface{}{
+			Args: []any{
+				[]any{
 					1,
 					2,
 					3,
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				1,
 				2,
 				3,
@@ -1496,10 +1496,10 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeArray,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 			},
 		},
@@ -1523,13 +1523,13 @@ func TestLambdaCallable(t *testing.T) {
 					},
 				},
 			},
-			Args: []interface{}{
-				[]interface{}{
+			Args: []any{
+				[]any{
 					"hello",
 					"world",
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -1552,8 +1552,8 @@ func TestLambdaCallable(t *testing.T) {
 					},
 				},
 			},
-			Args: []interface{}{
-				[]interface{}{
+			Args: []any{
+				[]any{
 					0,
 					1,
 				},
@@ -1576,8 +1576,8 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeString,
 				},
 			},
-			Args: []interface{}{
-				[]interface{}{
+			Args: []any{
+				[]any{
 					"hello",
 					"world",
 				},
@@ -1602,12 +1602,12 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeObject,
 				},
 			},
-			Args: []interface{}{
-				map[string]interface{}{
+			Args: []any{
+				map[string]any{
 					"x": "marks the spot",
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"x": "marks the spot",
 			},
 		},
@@ -1626,7 +1626,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeObject,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				struct {
 					x string
 					y int
@@ -1660,7 +1660,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeObject,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 			},
 			Error: &ArgTypeError{
@@ -1697,12 +1697,12 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeJSON,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"hello",
 				100,
 				true,
-				[]interface{}{},
-				map[string]interface{}{},
+				[]any{},
+				map[string]any{},
 			},
 			Output: float64(0),
 		},
@@ -1719,7 +1719,7 @@ func TestLambdaCallable(t *testing.T) {
 					Type: jparse.ParamTypeJSON,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				undefinedCallable{},
 			},
 			Error: &ArgTypeError{
@@ -1743,13 +1743,13 @@ func TestLambdaCallable(t *testing.T) {
 					Option: jparse.ParamVariadic,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"john",
 				"paul",
 				"ringo",
 				"george",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"john",
 				"paul",
 				"ringo",
@@ -1772,10 +1772,10 @@ func TestLambdaCallable(t *testing.T) {
 					Option: jparse.ParamVariadic,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				100,
 			},
-			Output: []interface{}{
+			Output: []any{
 				100,
 			},
 		},
@@ -1793,7 +1793,7 @@ func TestLambdaCallable(t *testing.T) {
 					Option: jparse.ParamVariadic,
 				},
 			},
-			Args: []interface{}{
+			Args: []any{
 				"john",
 				"paul",
 				"ringo",
@@ -1835,7 +1835,7 @@ func testLambdaCallable(t *testing.T, tests []lambdaCallableTest) {
 
 		v, err := f.Call(args)
 
-		var output interface{}
+		var output any
 		if v.IsValid() && v.CanInterface() {
 			output = v.Interface()
 		}
@@ -1861,7 +1861,7 @@ type partialCallableTest struct {
 	Func     jtypes.Callable
 	FuncArgs []jparse.Node
 	Args     []reflect.Value
-	Output   interface{}
+	Output   any
 	Error    error
 }
 
@@ -1938,7 +1938,7 @@ func testPartialCallableTest(t *testing.T, tests []partialCallableTest) {
 
 		v, err := f.Call(test.Args)
 
-		var output interface{}
+		var output any
 		if v.IsValid() && v.CanInterface() {
 			output = v.Interface()
 		}
@@ -1958,15 +1958,15 @@ type transformationCallableTest struct {
 	Pattern   jparse.Node
 	Updates   jparse.Node
 	Deletes   jparse.Node
-	Input     interface{}
-	Output    interface{}
+	Input     any
+	Output    any
 	Error     error
 	Undefined bool
 }
 
 func TestTransformationCallable(t *testing.T) {
 
-	data := []map[string]interface{}{
+	data := []map[string]any{
 		{
 			"value": 1,
 			"en":    "one",
@@ -2019,28 +2019,28 @@ func TestTransformationCallable(t *testing.T) {
 				},
 			},
 			Input: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": float64(1),
 					"es":    "one",
 					"en":    "uno",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(2),
 					"es":    "two",
 					"en":    "dos",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(3),
 					"es":    "three",
 					"en":    "tres",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(4),
 					"es":    "four",
 					"en":    "cuatro",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(5),
 					"es":    "five",
 					"en":    "cinco",
@@ -2055,24 +2055,24 @@ func TestTransformationCallable(t *testing.T) {
 				Value: "es",
 			},
 			Input: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": float64(1),
 					"en":    "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(2),
 					"en":    "two",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(3),
 					"en":    "three",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(4),
 					"en":    "four",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(5),
 					"en":    "five",
 				},
@@ -2093,20 +2093,20 @@ func TestTransformationCallable(t *testing.T) {
 				},
 			},
 			Input: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": float64(1),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(2),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(3),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(4),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": float64(5),
 				},
 			},
@@ -2140,20 +2140,20 @@ func TestTransformationCallable(t *testing.T) {
 				},
 			},
 			Input: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"one": float64(1),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"two": float64(2),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"three": float64(3),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"four": float64(4),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"five": float64(5),
 				},
 			},
@@ -2178,7 +2178,7 @@ func TestTransformationCallable(t *testing.T) {
 				2,
 				3,
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -2313,7 +2313,7 @@ func testTransformationCallable(t *testing.T, tests []transformationCallableTest
 
 		v, err := f.Call(argv)
 
-		var output interface{}
+		var output any
 		if v.IsValid() && v.CanInterface() {
 			output = v.Interface()
 		}
@@ -2336,8 +2336,8 @@ func testTransformationCallable(t *testing.T, tests []transformationCallableTest
 
 type regexCallableTest struct {
 	Expr      string
-	Input     interface{}
-	Results   interface{}
+	Input     any
+	Results   any
 	Undefined bool
 }
 
@@ -2364,7 +2364,7 @@ func TestRegexCallable(t *testing.T) {
 			// Matches with no capturing groups.
 			Expr:  "a.?",
 			Input: "abracadabra",
-			Results: map[string]interface{}{
+			Results: map[string]any{
 				"match":  "ab",
 				"start":  0,
 				"end":    2,
@@ -2416,7 +2416,7 @@ func TestRegexCallable(t *testing.T) {
 			// Matches with capturing groups.
 			Expr:  "a(.?)",
 			Input: "abracadabra",
-			Results: map[string]interface{}{
+			Results: map[string]any{
 				"match": "ab",
 				"start": 0,
 				"end":   2,
@@ -2481,7 +2481,7 @@ func TestRegexCallable(t *testing.T) {
 			// which uses undefined).
 			Expr:  "(a.)|(a)",
 			Input: "abracadabra",
-			Results: map[string]interface{}{
+			Results: map[string]any{
 				"match": "ab",
 				"start": 0,
 				"end":   2,
@@ -2554,7 +2554,7 @@ func TestRegexCallable(t *testing.T) {
 			// such as $substring.
 			Expr:  "😀",
 			Input: "😂😁😀",
-			Results: map[string]interface{}{
+			Results: map[string]any{
 				"match":  "😀",
 				"start":  8,  // 4 in jsonata-js
 				"end":    12, // 6 in jsonata-js
@@ -2591,7 +2591,7 @@ func testRegexCallable(t *testing.T, tests []regexCallableTest) {
 			continue
 		}
 
-		var results interface{}
+		var results any
 		if v.IsValid() && v.CanInterface() {
 			results = v.Interface()
 		}

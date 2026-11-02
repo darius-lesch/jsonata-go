@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 func TestString(t *testing.T) {
 
 	data := []struct {
-		Input  interface{}
+		Input  any
 		Output string
 		Error  error
 	}{
@@ -72,11 +72,11 @@ func TestString(t *testing.T) {
 			Output: "null",
 		},
 		{
-			Input:  []interface{}{},
+			Input:  []any{},
 			Output: "[]",
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				"hello",
 				100,
 				3.14159265359,
@@ -85,11 +85,11 @@ func TestString(t *testing.T) {
 			Output: `["hello",100,3.14159265359,false]`,
 		},
 		{
-			Input:  map[string]interface{}{},
+			Input:  map[string]any{},
 			Output: "{}",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"hello":       "world",
 				"one hundred": 100,
 				"pi":          3.14159265359,
@@ -107,7 +107,7 @@ func TestString(t *testing.T) {
 			Output: "",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"fn":   &matchCallable{},
 				"html": "<script>&</script>",
 			},
@@ -412,7 +412,7 @@ func TestContains(t *testing.T) {
 	src := "😂 emoji"
 
 	data := []struct {
-		Pattern interface{} // pattern can be a string or a matching function
+		Pattern any // pattern can be a string or a matching function
 		Output  bool
 		Error   error
 	}{
@@ -489,7 +489,7 @@ func TestSplit(t *testing.T) {
 	src := "😂 emoji"
 
 	data := []struct {
-		Separator interface{} // separator can be a string or a matching function
+		Separator any // separator can be a string or a matching function
 		Limit     jtypes.OptionalInt
 		Output    []string
 		Error     error
@@ -627,7 +627,7 @@ func TestSplit(t *testing.T) {
 func TestJoin(t *testing.T) {
 
 	data := []struct {
-		Values    interface{}
+		Values    any
 		Separator jtypes.OptionalString
 		Output    string
 		Error     error
@@ -649,7 +649,7 @@ func TestJoin(t *testing.T) {
 			Output: "😂emoji",
 		},
 		{
-			Values: []interface{}{
+			Values: []any{
 				"one",
 				"two",
 				"three",
@@ -660,7 +660,7 @@ func TestJoin(t *testing.T) {
 			Output:    "one😂two😂three😂four😂five",
 		},
 		{
-			Values: []interface{}{
+			Values: []any{
 				"one",
 				"two",
 				"three",
@@ -700,13 +700,13 @@ func TestMatch(t *testing.T) {
 	data := []struct {
 		Pattern jtypes.Callable
 		Limit   jtypes.OptionalInt
-		Output  []map[string]interface{}
+		Output  []map[string]any
 		Error   error
 	}{
 		{
 			// Matches for regex "a."
 			Pattern: abracadabraMatches0(),
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match":  "ab",
 					"index":  0,
@@ -732,7 +732,7 @@ func TestMatch(t *testing.T) {
 		{
 			// Matches for regex "a(.)"
 			Pattern: abracadabraMatches1(),
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match": "ab",
 					"index": 0,
@@ -766,7 +766,7 @@ func TestMatch(t *testing.T) {
 		{
 			// Matches for regex "(a)(.)"
 			Pattern: abracadabraMatches2(),
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match": "ab",
 					"index": 0,
@@ -804,7 +804,7 @@ func TestMatch(t *testing.T) {
 		{
 			Pattern: abracadabraMatches2(),
 			Limit:   jtypes.NewOptionalInt(1),
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match": "ab",
 					"index": 0,
@@ -818,7 +818,7 @@ func TestMatch(t *testing.T) {
 		{
 			Pattern: abracadabraMatches2(),
 			Limit:   jtypes.NewOptionalInt(0),
-			Output:  []map[string]interface{}{},
+			Output:  []map[string]any{},
 		},
 		{
 			Pattern: abracadabraMatches2(),
@@ -829,7 +829,7 @@ func TestMatch(t *testing.T) {
 			Pattern: &matchCallable{
 				name: "/muji/",
 			},
-			Output: []map[string]interface{}{},
+			Output: []map[string]any{},
 		},
 	}
 
@@ -860,8 +860,8 @@ func TestReplace(t *testing.T) {
 	src := "abracadabra"
 
 	data := []struct {
-		Pattern interface{} // pattern can be a string or a matching function
-		Repl    interface{} // repl can be a string or a replacement function
+		Pattern any // pattern can be a string or a matching function
+		Repl    any // repl can be a string or a replacement function
 		Limit   jtypes.OptionalInt
 		Output  string
 		Error   error
@@ -1015,7 +1015,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches0(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				match, _ := m["match"].(string)
 				return strings.ToUpper(match), nil
 			}),
@@ -1023,7 +1023,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches0(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				match, _ := m["match"].(string)
 				return strings.ToUpper(match), nil
 			}),
@@ -1032,7 +1032,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches0(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				match, _ := m["match"].(string)
 				return strings.ToUpper(match), nil
 			}),
@@ -1041,7 +1041,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches1(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				groups, _ := m["groups"].([]string)
 				if len(groups) != 1 {
 					return "", fmt.Errorf("replaceCallable expected 1 captured group, got %d", len(groups))
@@ -1053,7 +1053,7 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches2(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				groups, _ := m["groups"].([]string)
 				if len(groups) != 2 {
 					return "", fmt.Errorf("replaceCallable expected 2 captured groups, got %d", len(groups))
@@ -1066,14 +1066,14 @@ func TestReplace(t *testing.T) {
 		},
 		{
 			Pattern: abracadabraMatches2(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				return 100, nil
 			}),
 			Error: fmt.Errorf("third argument of function replace must be a function that returns a string"),
 		},
 		{
 			Pattern: abracadabraMatches2(),
-			Repl: replaceCallable(func(m map[string]interface{}) (interface{}, error) {
+			Repl: replaceCallable(func(m map[string]any) (any, error) {
 				return nil, fmt.Errorf("this callable returned an error")
 			}),
 			Error: fmt.Errorf("this callable returned an error"),
@@ -1125,7 +1125,7 @@ func TestFormatNumber(t *testing.T) {
 	data := []struct {
 		Value   float64
 		Picture string
-		Options interface{}
+		Options any
 		Output  string
 		Error   error
 	}{
@@ -1158,7 +1158,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   0.14,
 			Picture: "01pc",
 			// Custom percent symbol.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"percent": "pc",
 			},
 			Output: "14pc",
@@ -1172,7 +1172,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   0.014,
 			Picture: "01pm",
 			// Custom per-mille symbol.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"per-mille": "pm",
 			},
 			Output: "14pm",
@@ -1186,7 +1186,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   1234.5678,
 			Picture: "#ʹ##0·00",
 			// Custom grouping and decimal separators.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"grouping-separator": "ʹ",
 				"decimal-separator":  "·",
 			},
@@ -1196,7 +1196,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   1234.5678,
 			Picture: "00.000E0",
 			// Custom exponent separator.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"exponent-separator": "E",
 			},
 			Output: "12.346E2",
@@ -1205,7 +1205,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   0.234,
 			Picture: "0.0E0",
 			// Custom exponent separator.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"exponent-separator": "E",
 			},
 			Output: "2.3E-1",
@@ -1214,7 +1214,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   0.234,
 			Picture: "#.00E0",
 			// Custom exponent separator.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"exponent-separator": "E",
 			},
 			Output: "0.23E0",
@@ -1223,7 +1223,7 @@ func TestFormatNumber(t *testing.T) {
 			Value:   0.234,
 			Picture: ".00E0",
 			// Custom exponent separator.
-			Options: map[string]interface{}{
+			Options: map[string]any{
 				"exponent-separator": "E",
 			},
 			Output: ".23E0",
@@ -1355,7 +1355,7 @@ func (f *matchCallable) Call(vs []reflect.Value) (reflect.Value, error) {
 		return reflect.Value{}, nil
 	}
 
-	obj := map[string]interface{}{
+	obj := map[string]any{
 		"match":  f.matches[f.index].Match,
 		"start":  f.matches[f.index].Start,
 		"end":    f.matches[f.index].End,
@@ -1367,7 +1367,7 @@ func (f *matchCallable) Call(vs []reflect.Value) (reflect.Value, error) {
 	return reflect.ValueOf(obj), nil
 }
 
-type replaceCallable func(map[string]interface{}) (interface{}, error)
+type replaceCallable func(map[string]any) (any, error)
 
 func (f replaceCallable) Name() string {
 	return "<replace>"
@@ -1387,7 +1387,7 @@ func (f replaceCallable) Call(vs []reflect.Value) (reflect.Value, error) {
 		return reflect.Value{}, fmt.Errorf("replaceCallable: expected an interfaceable type, got %s", vs[0].Type())
 	}
 
-	m, ok := vs[0].Interface().(map[string]interface{})
+	m, ok := vs[0].Interface().(map[string]any)
 	if !ok {
 		return reflect.Value{}, fmt.Errorf("replaceCallable: expected argument to be a map of string to empty interface, got %s", vs[0].Type())
 	}
@@ -1462,7 +1462,7 @@ func abracadabraMatches(name string) *matchCallable {
 	}
 }
 
-func newStringCallable(v interface{}) jlib.StringCallable {
+func newStringCallable(v any) jlib.StringCallable {
 	return jlib.StringCallable(reflect.ValueOf(v))
 }
 

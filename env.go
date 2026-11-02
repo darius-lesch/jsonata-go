@@ -433,7 +433,7 @@ func mustGoCallable(name string, ext Extension) *goCallable {
 
 // Local functions (not from external packages)
 
-func lookup(v reflect.Value, name string) (interface{}, error) {
+func lookup(v reflect.Value, name string) (any, error) {
 
 	res, err := evalName(&jparse.NameNode{Value: name}, v, nil)
 	if err != nil {
@@ -451,11 +451,11 @@ func lookup(v reflect.Value, name string) (interface{}, error) {
 	return nil, nil
 }
 
-func throw(msg string) (interface{}, error) {
+func throw(msg string) (any, error) {
 	return nil, errors.New(msg)
 }
 
-func assertFunc(condition bool, msg ...string) (interface{}, error) {
+func assertFunc(condition bool, msg ...string) (any, error) {
 	if !condition {
 		m := "Assertion failed"
 		if len(msg) > 0 && msg[0] != "" {
@@ -488,7 +488,7 @@ func (e *evalCallable) Call(args []reflect.Value) (reflect.Value, error) {
 		return undefined, err
 	}
 
-	var evalCtx interface{}
+	var evalCtx any
 	if len(args) > 1 && args[1].IsValid() && args[1].CanInterface() {
 		evalCtx = args[1].Interface()
 	} else if e.ctx.IsValid() && e.ctx.CanInterface() {

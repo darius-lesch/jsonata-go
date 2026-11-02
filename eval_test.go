@@ -18,11 +18,11 @@ import (
 
 type evalTestCase struct {
 	Input  jparse.Node
-	Vars   map[string]interface{}
+	Vars   map[string]any
 	Exts   map[string]Extension
-	Data   interface{}
-	Equals func(interface{}, interface{}) bool
-	Output interface{}
+	Data   any
+	Equals func(any, any) bool
+	Output any
 	Error  error
 }
 
@@ -113,7 +113,7 @@ func TestEvalVariable(t *testing.T) {
 			Input: &jparse.VariableNode{
 				Name: "x",
 			},
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"x": "marks the spot",
 			},
 			Output: "marks the spot",
@@ -122,10 +122,10 @@ func TestEvalVariable(t *testing.T) {
 			// The zero VariableNode ($) returns the evaluation
 			// context.
 			Input: &jparse.VariableNode{},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"x": "marks the spot",
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"x": "marks the spot",
 			},
 		},
@@ -151,7 +151,7 @@ func TestEvalNegation(t *testing.T) {
 					Value: "number",
 				},
 			},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"number": -100,
 			},
 			Output: float64(100),
@@ -163,7 +163,7 @@ func TestEvalNegation(t *testing.T) {
 					Name: "x",
 				},
 			},
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"x": 100,
 			},
 			Output: float64(-100),
@@ -215,7 +215,7 @@ func TestEvalRange(t *testing.T) {
 					Value: 2,
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(-2),
 				float64(-1),
 				float64(0),
@@ -234,7 +234,7 @@ func TestEvalRange(t *testing.T) {
 					Value: 10,
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(10),
 			},
 		},
@@ -603,7 +603,7 @@ func TestEvalArray(t *testing.T) {
 	testEvalTestCases(t, []evalTestCase{
 		{
 			Input:  &jparse.ArrayNode{},
-			Output: []interface{}{},
+			Output: []any{},
 		},
 		{
 			Input: &jparse.ArrayNode{
@@ -620,7 +620,7 @@ func TestEvalArray(t *testing.T) {
 					&jparse.NullNode{},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				"two",
 				true,
@@ -648,9 +648,9 @@ func TestEvalArray(t *testing.T) {
 					&jparse.NullNode{},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
-				[]interface{}{
+				[]any{
 					"two",
 					true,
 				},
@@ -678,7 +678,7 @@ func TestEvalArray(t *testing.T) {
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -704,7 +704,7 @@ func TestEvalArray(t *testing.T) {
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				"four",
 			},
@@ -731,7 +731,7 @@ func TestEvalObject(t *testing.T) {
 	testEvalTestCases(t, []evalTestCase{
 		{
 			Input:  &jparse.ObjectNode{},
-			Output: map[string]interface{}{},
+			Output: map[string]any{},
 		},
 		{
 			Input: &jparse.ObjectNode{
@@ -762,7 +762,7 @@ func TestEvalObject(t *testing.T) {
 					},
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one":   float64(1),
 				"two":   float64(2),
 				"three": float64(3),
@@ -855,7 +855,7 @@ func TestEvalObject(t *testing.T) {
 					},
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one": float64(1),
 			},
 		},
@@ -905,31 +905,31 @@ func TestEvalGroup(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
-				map[string]interface{}{
+			Data: []any{
+				map[string]any{
 					"name": "zero",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "one",
 					"value": 1,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "two",
 					"value": 2,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "two",
 					"value": 12,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "three",
 					"value": 3,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "three",
 					"value": 13,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"name":  "three",
 					"value": 23,
 				},
@@ -942,7 +942,7 @@ func TestEvalGroup(t *testing.T) {
 					},
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one":   float64(1),
 				"two":   float64(14),
 				"three": float64(39),
@@ -1177,14 +1177,14 @@ func TestEvalWildcard(t *testing.T) {
 			// If the input is an empty array, the wildcard
 			// operator evaluates to undefined.
 			Input:  &jparse.WildcardNode{},
-			Data:   []interface{}{},
+			Data:   []any{},
 			Output: nil,
 		},
 		{
 			// If the input is an array with one item, the
 			// wildcard operator evaluates to the item.
 			Input: &jparse.WildcardNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
 			},
 			Output: "one",
@@ -1193,12 +1193,12 @@ func TestEvalWildcard(t *testing.T) {
 			// If the input is a multi-item array, the wildcard
 			// operator evaluates to the items.
 			Input: &jparse.WildcardNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
 				"two",
 				"three",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"one",
 				"two",
 				"three",
@@ -1207,22 +1207,22 @@ func TestEvalWildcard(t *testing.T) {
 		{
 			// Nested arrays are flattened into a single array.
 			Input: &jparse.WildcardNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
-				[]interface{}{
+				[]any{
 					"two",
-					[]interface{}{
+					[]any{
 						"three",
-						[]interface{}{
+						[]any{
 							"four",
-							[]interface{}{
+							[]any{
 								"five",
 							},
 						},
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				"one",
 				"two",
 				"three",
@@ -1234,14 +1234,14 @@ func TestEvalWildcard(t *testing.T) {
 			// If the input is an empty map, the wildcard
 			// operator evaluates to undefined.
 			Input:  &jparse.WildcardNode{},
-			Data:   map[string]interface{}{},
+			Data:   map[string]any{},
 			Output: nil,
 		},
 		{
 			// If the input is a map with one item, the wildcard
 			// operator evaluates to the item's value.
 			Input: &jparse.WildcardNode{},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"one": 1,
 			},
 			Output: 1,
@@ -1252,7 +1252,7 @@ func TestEvalWildcard(t *testing.T) {
 			// array. Note that the order is non-deterministic
 			// because Go traverses maps in random order.
 			Input: &jparse.WildcardNode{},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"one":   1,
 				"two":   2,
 				"three": 3,
@@ -1263,7 +1263,7 @@ func TestEvalWildcard(t *testing.T) {
 				"six": 6,
 			},
 			Equals: equalArraysUnordered,
-			Output: []interface{}{
+			Output: []any{
 				1,
 				2,
 				3,
@@ -1324,7 +1324,7 @@ func TestEvalWildcard(t *testing.T) {
 				},
 				six: 6,
 			},
-			Output: []interface{}{
+			Output: []any{
 				1,
 				2,
 				3,
@@ -1341,14 +1341,14 @@ func TestEvalDescendent(t *testing.T) {
 			// If the input is an empty array, the descendent
 			// operator evaluates to undefined.
 			Input:  &jparse.DescendentNode{},
-			Data:   []interface{}{},
+			Data:   []any{},
 			Output: nil,
 		},
 		{
 			// If the input is an array with one item, the
 			// descendent operator evaluates to the item.
 			Input: &jparse.DescendentNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
 			},
 			Output: "one",
@@ -1357,12 +1357,12 @@ func TestEvalDescendent(t *testing.T) {
 			// If the input is a multi-item array, the descendent
 			// operator evaluates to the items.
 			Input: &jparse.DescendentNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
 				"two",
 				"three",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"one",
 				"two",
 				"three",
@@ -1371,22 +1371,22 @@ func TestEvalDescendent(t *testing.T) {
 		{
 			// Nested arrays are flattened into a single array.
 			Input: &jparse.DescendentNode{},
-			Data: []interface{}{
+			Data: []any{
 				"one",
-				[]interface{}{
+				[]any{
 					"two",
-					[]interface{}{
+					[]any{
 						"three",
-						[]interface{}{
+						[]any{
 							"four",
-							[]interface{}{
+							[]any{
 								"five",
 							},
 						},
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				"one",
 				"two",
 				"three",
@@ -1398,19 +1398,19 @@ func TestEvalDescendent(t *testing.T) {
 			// If the input is an empty map, the descendent
 			// operator evaluates to an empty map.
 			Input:  &jparse.DescendentNode{},
-			Data:   map[string]interface{}{},
-			Output: map[string]interface{}{},
+			Data:   map[string]any{},
+			Output: map[string]any{},
 		},
 		{
 			// If the input is a map with one item, the descendent
 			// operator evaluates to an array containing the map
 			// itself and its single value.
 			Input: &jparse.DescendentNode{},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"one": 1,
 			},
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"one": 1,
 				},
 				1,
@@ -1423,7 +1423,7 @@ func TestEvalDescendent(t *testing.T) {
 			// of the values is non-deterministic because Go
 			// traverses maps in random order.
 			Input: &jparse.DescendentNode{},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"one":   1,
 				"two":   2,
 				"three": 3,
@@ -1434,8 +1434,8 @@ func TestEvalDescendent(t *testing.T) {
 				"six": 6,
 			},
 			Equals: equalArraysUnordered,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"one":   1,
 					"two":   2,
 					"three": 3,
@@ -1470,7 +1470,7 @@ func TestEvalDescendent(t *testing.T) {
 			}{
 				Value: "hello world",
 			},
-			Output: []interface{}{
+			Output: []any{
 				struct {
 					Value string
 				}{
@@ -1517,7 +1517,7 @@ func TestEvalDescendent(t *testing.T) {
 				},
 				six: 6,
 			},
-			Output: []interface{}{
+			Output: []any{
 				struct {
 					One      int
 					Two      int
@@ -1657,7 +1657,7 @@ func TestEvalPredicate(t *testing.T) {
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(5),
 				float64(5),
@@ -1685,7 +1685,7 @@ func TestEvalPredicate(t *testing.T) {
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(3),
 				float64(6),
 				float64(9),
@@ -1747,47 +1747,47 @@ func TestEvalPredicate(t *testing.T) {
 
 func TestEvalSort(t *testing.T) {
 
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"value": 0,
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 1,
 			"en":    "one",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 2,
 			"en":    "two",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 3,
 			"en":    "three",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 4,
 			"en":    "four",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 5,
 			"en":    "five",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 1,
 			"es":    "uno",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 2,
 			"es":    "dos",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 3,
 			"es":    "tres",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 4,
 			"es":    "cuatro",
 		},
-		map[string]interface{}{
+		map[string]any{
 			"value": 5,
 			"es":    "cinco",
 		},
@@ -1811,47 +1811,47 @@ func TestEvalSort(t *testing.T) {
 				},
 			},
 			Data: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": 5,
 					"en":    "five",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"en":    "four",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"en":    "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"en":    "three",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"en":    "two",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"es":    "uno",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"es":    "dos",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"es":    "tres",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"es":    "cuatro",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"es":    "cinco",
 				},
@@ -1874,47 +1874,47 @@ func TestEvalSort(t *testing.T) {
 				},
 			},
 			Data: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": 1,
 					"es":    "uno",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"es":    "tres",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"es":    "dos",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"es":    "cuatro",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"es":    "cinco",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"en":    "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"en":    "two",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"en":    "three",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"en":    "four",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"en":    "five",
 				},
@@ -1938,47 +1938,47 @@ func TestEvalSort(t *testing.T) {
 				},
 			},
 			Data: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": 0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"en":    "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"es":    "uno",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"en":    "two",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"es":    "dos",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"en":    "three",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"es":    "tres",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"en":    "four",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"es":    "cuatro",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"en":    "five",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"es":    "cinco",
 				},
@@ -2008,48 +2008,48 @@ func TestEvalSort(t *testing.T) {
 				},
 			},
 			Data: data,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"value": 5,
 					"es":    "cinco",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 5,
 					"en":    "five",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"es":    "cuatro",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 4,
 					"en":    "four",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"es":    "tres",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 3,
 					"en":    "three",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"es":    "dos",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 2,
 					"en":    "two",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"es":    "uno",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 1,
 					"en":    "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"value": 0,
 				},
 			},
@@ -2071,12 +2071,12 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
-				map[string]interface{}{
+			Data: []any{
+				map[string]any{
 					"value": 0,
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"value": 0,
 			},
 		},
@@ -2094,8 +2094,8 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data:   []interface{}{},
-			Output: []interface{}{},
+			Data:   []any{},
+			Output: []any{},
 		},
 		{
 			// If the expression being sorted evaluates to an
@@ -2131,7 +2131,7 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
+			Data: []any{
 				"hello",
 				"world",
 			},
@@ -2152,7 +2152,7 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
+			Data: []any{
 				"hello",
 				"world",
 				false,
@@ -2173,7 +2173,7 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
+			Data: []any{
 				"hello",
 				"world",
 				100,
@@ -2194,7 +2194,7 @@ func TestEvalSort(t *testing.T) {
 					},
 				},
 			},
-			Data: []interface{}{
+			Data: []any{
 				100,
 				"string",
 			},
@@ -3295,7 +3295,7 @@ func TestEvalComparisonOperator(t *testing.T) {
 			},
 			Exts: map[string]Extension{
 				"f1": {
-					Func: func() interface{} { return nil },
+					Func: func() any { return nil },
 				},
 			},
 			Output: true,
@@ -3313,10 +3313,10 @@ func TestEvalComparisonOperator(t *testing.T) {
 			},
 			Exts: map[string]Extension{
 				"f1": {
-					Func: func() interface{} { return nil },
+					Func: func() any { return nil },
 				},
 				"f2": {
-					Func: func() interface{} { return nil },
+					Func: func() any { return nil },
 				},
 			},
 			Output: false,
@@ -4236,7 +4236,7 @@ func TestEvalName(t *testing.T) {
 			Input: &jparse.NameNode{
 				Value: "Field",
 			},
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"Field": 9.99,
 			},
 			Output: 9.99,
@@ -4256,18 +4256,18 @@ func TestEvalName(t *testing.T) {
 			Input: &jparse.NameNode{
 				Value: "Field",
 			},
-			Data: []interface{}{
-				map[string]interface{}{
+			Data: []any{
+				map[string]any{
 					"Field": "one",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Field": 2.0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Field": true,
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				"one",
 				2.0,
 				true,
@@ -4296,7 +4296,7 @@ func testEvalTestCases(t *testing.T, tests []evalTestCase) {
 
 		v, err := eval(test.Input, reflect.ValueOf(test.Data), env)
 
-		var output interface{}
+		var output any
 		if v.IsValid() && v.CanInterface() {
 			output = v.Interface()
 		}

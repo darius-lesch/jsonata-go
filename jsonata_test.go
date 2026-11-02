@@ -51,10 +51,10 @@ type testCase struct {
 }
 
 var testdata struct {
-	account interface{}
-	address interface{}
-	library interface{}
-	foobar  interface{}
+	account any
+	address any
+	library any
+	foobar  any
 }
 
 func TestMain(m *testing.M) {
@@ -244,36 +244,36 @@ func TestPaths(t *testing.T) {
 		},
 		{
 			Expression: "foo.blah",
-			Output: []interface{}{
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+			Output: []any{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "hello",
 					},
 				},
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "world",
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"bazz": "gotcha",
 				},
 			},
 		},
 		{
 			Expression: "foo.blah.baz",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"fud": "hello",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"fud": "world",
 				},
 			},
 		},
 		{
 			Expression: "foo.blah.baz.fud",
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -298,19 +298,19 @@ func TestPaths2(t *testing.T) {
 
 func TestPaths3(t *testing.T) {
 
-	data := []interface{}{
-		[]interface{}{
-			map[string]interface{}{
-				"baz": map[string]interface{}{
+	data := []any{
+		[]any{
+			map[string]any{
+				"baz": map[string]any{
 					"fud": "hello",
 				},
 			},
-			map[string]interface{}{
-				"baz": map[string]interface{}{
+			map[string]any{
+				"baz": map[string]any{
 					"fud": "hello",
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"bazz": "gotcha",
 			},
 		},
@@ -326,29 +326,29 @@ func TestPaths3(t *testing.T) {
 
 func TestPaths4(t *testing.T) {
 
-	data := []interface{}{
+	data := []any{
 		42,
-		[]interface{}{
-			map[string]interface{}{
-				"baz": map[string]interface{}{
+		[]any{
+			map[string]any{
+				"baz": map[string]any{
 					"fud": "hello",
 				},
 			},
-			map[string]interface{}{
-				"baz": map[string]interface{}{
+			map[string]any{
+				"baz": map[string]any{
 					"fud": "hello",
 				},
 			},
-			map[string]interface{}{
+			map[string]any{
 				"bazz": "gotcha",
 			},
 		},
 		"here",
-		map[string]interface{}{
+		map[string]any{
 			"fud": "hello",
 		},
 		"hello",
-		map[string]interface{}{
+		map[string]any{
 			"fud": "world",
 		},
 		"world",
@@ -358,7 +358,7 @@ func TestPaths4(t *testing.T) {
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: "fud",
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -378,22 +378,22 @@ func TestSingletonArrays(t *testing.T) {
 				`Phone[type="mobile"][].number`,
 				`Phone[][type="mobile"].number`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				"077 7700 1234",
 			},
 		},
 		{
 			Expression: `Phone[type="office"][].number`,
-			Output: []interface{}{
+			Output: []any{
 				"01962 001234",
 				"01962 001235",
 			},
 		},
 		{
 			Expression: `Phone{type: number}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"home": "0203 544 1234",
-				"office": []interface{}{
+				"office": []any{
 					"01962 001234",
 					"01962 001235",
 				},
@@ -402,15 +402,15 @@ func TestSingletonArrays(t *testing.T) {
 		},
 		{
 			Expression: `Phone{type: number[]}`,
-			Output: map[string]interface{}{
-				"home": []interface{}{
+			Output: map[string]any{
+				"home": []any{
 					"0203 544 1234",
 				},
-				"office": []interface{}{
+				"office": []any{
 					"01962 001234",
 					"01962 001235",
 				},
-				"mobile": []interface{}{
+				"mobile": []any{
 					"077 7700 1234",
 				},
 			},
@@ -423,8 +423,8 @@ func TestArraySelectors(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.blah[0]",
-			Output: map[string]interface{}{
-				"baz": map[string]interface{}{
+			Output: map[string]any{
+				"baz": map[string]any{
 					"fud": "hello",
 				},
 			},
@@ -453,7 +453,7 @@ func TestArraySelectors(t *testing.T) {
 				"foo.blah.baz.fud[0]",
 				"foo.blah.baz.fud[-1]",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -479,17 +479,17 @@ func TestArraySelectors(t *testing.T) {
 		},
 		{
 			Expression: "foo.blah[0].baz",
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"fud": "hello",
 			},
 		},
 		{
 			Expression: "foo.blah.baz[0]",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"fud": "hello",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"fud": "world",
 				},
 			},
@@ -501,7 +501,7 @@ func TestArraySelectors(t *testing.T) {
 				"(foo.blah.baz)[0.99]",
 				"(foo.blah.baz)[-1.5]",
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"fud": "hello",
 			},
 		},
@@ -512,7 +512,7 @@ func TestArraySelectors(t *testing.T) {
 				"(foo.blah.baz)[-0.01]",
 				"(foo.blah.baz)[-0.5]",
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"fud": "world",
 			},
 		},
@@ -521,12 +521,12 @@ func TestArraySelectors(t *testing.T) {
 
 func TestArraySelectors2(t *testing.T) {
 
-	data := []interface{}{
-		[]interface{}{
+	data := []any{
+		[]any{
 			1,
 			2,
 		},
-		[]interface{}{
+		[]any{
 			3,
 			4,
 		},
@@ -538,7 +538,7 @@ func TestArraySelectors2(t *testing.T) {
 				"$[0]",
 				"$[-2]",
 			},
-			Output: []interface{}{
+			Output: []any{
 				1,
 				2,
 			},
@@ -548,7 +548,7 @@ func TestArraySelectors2(t *testing.T) {
 				"$[1]",
 				"$[-1]",
 			},
-			Output: []interface{}{
+			Output: []any{
 				3,
 				4,
 			},
@@ -568,7 +568,7 @@ func TestArraySelectors3(t *testing.T) {
 	runTestCases(t, readJSON("nest3.json"), []*testCase{
 		{
 			Expression: "nest0.nest1[0]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(3),
 				float64(5),
@@ -583,7 +583,7 @@ func TestArraySelectors4(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "[1..10][[1..3,8,-1]]",
-			Output: []interface{}{
+			Output: []any{
 				float64(2),
 				float64(3),
 				float64(4),
@@ -593,7 +593,7 @@ func TestArraySelectors4(t *testing.T) {
 		},
 		{
 			Expression: "[1..10][[1..3,8,5]]",
-			Output: []interface{}{
+			Output: []any{
 				float64(2),
 				float64(3),
 				float64(4),
@@ -603,7 +603,7 @@ func TestArraySelectors4(t *testing.T) {
 		},
 		{
 			Expression: "[1..10][[1..3,8,false]]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -625,18 +625,18 @@ func TestQuotedSelectors(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.`blah`",
-			Output: []interface{}{
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+			Output: []any{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "hello",
 					},
 				},
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "world",
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"bazz": "gotcha",
 				},
 			},
@@ -649,7 +649,7 @@ func TestQuotedSelectors(t *testing.T) {
 				"foo.blah.baz.`fud`",
 				"`foo`.`blah`.`baz`.`fud`",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -905,7 +905,7 @@ func TestComparisonOperators2(t *testing.T) {
 				`foo.blah.baz[fud = "hello"]`,
 				`foo.blah.baz[fud != "world"]`,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"fud": "hello",
 			},
 		},
@@ -917,7 +917,7 @@ func TestComparisonOperators3(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account.Order.Product[Price > 30].Price",
-			Output: []interface{}{
+			Output: []any{
 				34.45,
 				34.45,
 				107.99,
@@ -925,7 +925,7 @@ func TestComparisonOperators3(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.Product.Price[$<=35]",
-			Output: []interface{}{
+			Output: []any{
 				34.45,
 				21.67,
 				34.45,
@@ -967,7 +967,7 @@ func TestIncludeOperator2(t *testing.T) {
 	runTestCases(t, testdata.library, []*testCase{
 		{
 			Expression: `library.books["Aho" in authors].title`,
-			Output: []interface{}{
+			Output: []any{
 				"The AWK Programming Language",
 				"Compilers: Principles, Techniques, and Tools",
 			},
@@ -977,10 +977,10 @@ func TestIncludeOperator2(t *testing.T) {
 
 func TestIncludeOperator3(t *testing.T) {
 
-	data := []interface{}{
-		map[string]interface{}{
-			"content": map[string]interface{}{
-				"integration": map[string]interface{}{
+	data := []any{
+		map[string]any{
+			"content": map[string]any{
+				"integration": map[string]any{
 					"name": "fakeIntegrationName",
 				},
 			},
@@ -1025,7 +1025,7 @@ func TestParens(t *testing.T) {
 
 				"(foo.(blah).baz.fud)",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -1133,12 +1133,12 @@ func TestArrayFlattening(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account.Order.[Product.Price]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					34.45,
 					21.67,
 				},
-				[]interface{}{
+				[]any{
 					34.45,
 					107.99,
 				},
@@ -1155,7 +1155,7 @@ func TestArrayFlattening2(t *testing.T) {
 				"nest0",
 				"$.nest0",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -1167,8 +1167,8 @@ func TestArrayFlattening2(t *testing.T) {
 				"$[0]",
 				"$[-2]",
 			},
-			Output: map[string]interface{}{
-				"nest0": []interface{}{
+			Output: map[string]any{
+				"nest0": []any{
 					float64(1),
 					float64(2),
 				},
@@ -1179,8 +1179,8 @@ func TestArrayFlattening2(t *testing.T) {
 				"$[1]",
 				"$[-1]",
 			},
-			Output: map[string]interface{}{
-				"nest0": []interface{}{
+			Output: map[string]any{
+				"nest0": []any{
 					float64(3),
 					float64(4),
 				},
@@ -1188,14 +1188,14 @@ func TestArrayFlattening2(t *testing.T) {
 		},
 		{
 			Expression: "$[0].nest0",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 			},
 		},
 		{
 			Expression: "$[1].nest0",
-			Output: []interface{}{
+			Output: []any{
 				float64(3),
 				float64(4),
 			},
@@ -1216,7 +1216,7 @@ func TestArrayFlattening3(t *testing.T) {
 	runTestCases(t, readJSON("nest1.json"), []*testCase{
 		{
 			Expression: "nest0.nest1.nest2.nest3",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -1229,49 +1229,49 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.nest1.nest2.[nest3]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 				},
-				[]interface{}{
+				[]any{
 					float64(2),
 				},
-				[]interface{}{
+				[]any{
 					float64(3),
 				},
-				[]interface{}{
+				[]any{
 					float64(4),
 				},
-				[]interface{}{
+				[]any{
 					float64(5),
 				},
-				[]interface{}{
+				[]any{
 					float64(6),
 				},
-				[]interface{}{
+				[]any{
 					float64(7),
 				},
-				[]interface{}{
+				[]any{
 					float64(8),
 				},
 			},
 		},
 		{
 			Expression: "nest0.nest1.[nest2.nest3]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					float64(2),
 				},
-				[]interface{}{
+				[]any{
 					float64(3),
 					float64(4),
 				},
-				[]interface{}{
+				[]any{
 					float64(5),
 					float64(6),
 				},
-				[]interface{}{
+				[]any{
 					float64(7),
 					float64(8),
 				},
@@ -1279,14 +1279,14 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.[nest1.nest2.nest3]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					float64(2),
 					float64(3),
 					float64(4),
 				},
-				[]interface{}{
+				[]any{
 					float64(5),
 					float64(6),
 					float64(7),
@@ -1296,23 +1296,23 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.[nest1.[nest2.nest3]]",
-			Output: []interface{}{
-				[]interface{}{
-					[]interface{}{
+			Output: []any{
+				[]any{
+					[]any{
 						float64(1),
 						float64(2),
 					},
-					[]interface{}{
+					[]any{
 						float64(3),
 						float64(4),
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						float64(5),
 						float64(6),
 					},
-					[]interface{}{
+					[]any{
 						float64(7),
 						float64(8),
 					},
@@ -1321,32 +1321,32 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.[nest1.nest2.[nest3]]",
-			Output: []interface{}{
-				[]interface{}{
-					[]interface{}{
+			Output: []any{
+				[]any{
+					[]any{
 						float64(1),
 					},
-					[]interface{}{
+					[]any{
 						float64(2),
 					},
-					[]interface{}{
+					[]any{
 						float64(3),
 					},
-					[]interface{}{
+					[]any{
 						float64(4),
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						float64(5),
 					},
-					[]interface{}{
+					[]any{
 						float64(6),
 					},
-					[]interface{}{
+					[]any{
 						float64(7),
 					},
-					[]interface{}{
+					[]any{
 						float64(8),
 					},
 				},
@@ -1354,36 +1354,36 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.nest1.[nest2.[nest3]]",
-			Output: []interface{}{
-				[]interface{}{
-					[]interface{}{
+			Output: []any{
+				[]any{
+					[]any{
 						float64(1),
 					},
-					[]interface{}{
+					[]any{
 						float64(2),
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						float64(3),
 					},
-					[]interface{}{
+					[]any{
 						float64(4),
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						float64(5),
 					},
-					[]interface{}{
+					[]any{
 						float64(6),
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						float64(7),
 					},
-					[]interface{}{
+					[]any{
 						float64(8),
 					},
 				},
@@ -1391,39 +1391,39 @@ func TestArrayFlattening3(t *testing.T) {
 		},
 		{
 			Expression: "nest0.[nest1.[nest2.[nest3]]]",
-			Output: []interface{}{
-				[]interface{}{
-					[]interface{}{
-						[]interface{}{
+			Output: []any{
+				[]any{
+					[]any{
+						[]any{
 							float64(1),
 						},
-						[]interface{}{
+						[]any{
 							float64(2),
 						},
 					},
-					[]interface{}{
-						[]interface{}{
+					[]any{
+						[]any{
 							float64(3),
 						},
-						[]interface{}{
+						[]any{
 							float64(4),
 						},
 					},
 				},
-				[]interface{}{
-					[]interface{}{
-						[]interface{}{
+				[]any{
+					[]any{
+						[]any{
 							float64(5),
 						},
-						[]interface{}{
+						[]any{
 							float64(6),
 						},
 					},
-					[]interface{}{
-						[]interface{}{
+					[]any{
+						[]any{
 							float64(7),
 						},
-						[]interface{}{
+						[]any{
 							float64(8),
 						},
 					},
@@ -1467,9 +1467,9 @@ func TestPredicates(t *testing.T) {
 
 func TestPredicates2(t *testing.T) {
 
-	data := map[string]interface{}{
-		"clues": []interface{}{
-			map[string]interface{}{
+	data := map[string]any{
+		"clues": []any{
+			map[string]any{
 				"x":      6,
 				"y":      3,
 				"number": 7,
@@ -1487,8 +1487,8 @@ func TestPredicates2(t *testing.T) {
 
 func TestPredicates3(t *testing.T) {
 
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"x":      6,
 			"y":      2,
 			"number": 7,
@@ -1515,7 +1515,7 @@ func TestPredicates4(t *testing.T) {
 				`Account.Order.Product[Description.Colour = "Purple"][0].Price`,
 				`Account.Order.Product[$lowercase(Description.Colour) = "purple"][0].Price`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				34.45,
 				34.45,
 			},
@@ -1548,7 +1548,7 @@ func TestSortOperator(t *testing.T) {
 				`Account.Order.Product.Price^($)`,
 				`Account.Order.Product.Price^(<$)`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				21.67,
 				34.45,
 				34.45,
@@ -1557,7 +1557,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product.Price^(>$)`,
-			Output: []interface{}{
+			Output: []any{
 				107.99,
 				34.45,
 				34.45,
@@ -1566,7 +1566,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product^(Price).Description.Colour`,
-			Output: []interface{}{
+			Output: []any{
 				"Orange",
 				"Purple",
 				"Purple",
@@ -1575,7 +1575,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product^(Price).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"0406634348",
 				"0406654608",
 				"040657863",
@@ -1584,7 +1584,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product^(Price * Quantity).Description.Colour`,
-			Output: []interface{}{
+			Output: []any{
 				"Orange",
 				"Purple",
 				"Black",
@@ -1593,7 +1593,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product^(Quantity, Description.Colour).Description.Colour`,
-			Output: []interface{}{
+			Output: []any{
 				"Black",
 				"Orange",
 				"Purple",
@@ -1602,7 +1602,7 @@ func TestSortOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product^(Quantity, >Description.Colour).Description.Colour`,
-			Output: []interface{}{
+			Output: []any{
 				"Orange",
 				"Black",
 				"Purple",
@@ -1617,7 +1617,7 @@ func TestSortOperator2(t *testing.T) {
 	runTestCases(t, readJSON("account2.json"), []*testCase{
 		{
 			Expression: `Account.Order.Product^(Price).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"0406634348",
 				"040657863",
 				"0406654603",
@@ -1632,7 +1632,7 @@ func TestSortOperator3(t *testing.T) {
 	runTestCases(t, readJSON("account3.json"), []*testCase{
 		{
 			Expression: `Account.Order.Product^(Price).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"0406654608",
 				"040657863",
 				"0406654603",
@@ -1647,7 +1647,7 @@ func TestSortOperator4(t *testing.T) {
 	runTestCases(t, readJSON("account4.json"), []*testCase{
 		{
 			Expression: `Account.Order.Product^(Price).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"040657863",
 				"0406654603",
 				"0406654608",
@@ -1699,19 +1699,19 @@ func TestWildcards(t *testing.T) {
 	runTestCasesFunc(t, equalArraysUnordered, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.*",
-			Output: []interface{}{
+			Output: []any{
 				float64(42),
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "hello",
 					},
 				},
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "world",
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"bazz": "gotcha",
 				},
 				"here",
@@ -1730,11 +1730,11 @@ func TestWildcards2(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.*.baz",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"fud": "hello",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"fud": "world",
 				},
 			},
@@ -1749,7 +1749,7 @@ func TestWildcards2(t *testing.T) {
 				"*.*.baz.fud",
 				"*.*.*.fud",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -1762,14 +1762,14 @@ func TestWildcards3(t *testing.T) {
 	runTestCasesFunc(t, equalArraysUnordered, testdata.address, []*testCase{
 		{
 			Expression: `*[type="home"]`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"type":   "home",
 					"number": "0203 544 1234",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"type": "home",
-					"address": []interface{}{
+					"address": []any{
 						"freddy@my-social.com",
 						"frederic.smith@very-serious.com",
 					},
@@ -1784,7 +1784,7 @@ func TestWildcards4(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account[$$.Account.`Account Name` = 'Firefly'].*[OrderID='order104'].Product.Price",
-			Output: []interface{}{
+			Output: []any{
 				34.45,
 				107.99,
 			},
@@ -1797,29 +1797,29 @@ func TestDescendents(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.**.blah",
-			Output: []interface{}{
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+			Output: []any{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "hello",
 					},
 				},
-				map[string]interface{}{
-					"baz": map[string]interface{}{
+				map[string]any{
+					"baz": map[string]any{
 						"fud": "world",
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"bazz": "gotcha",
 				},
 			},
 		},
 		{
 			Expression: "foo.**.baz",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"fud": "hello",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"fud": "world",
 				},
 			},
@@ -1834,7 +1834,7 @@ func TestDescendents(t *testing.T) {
 				"foo.**.*.fud",
 				"foo.**.fud[0]",
 			},
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -1854,7 +1854,7 @@ func TestDescendents2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account.Order.**.Colour",
-			Output: []interface{}{
+			Output: []any{
 				"Purple",
 				"Orange",
 				"Purple",
@@ -1866,7 +1866,7 @@ func TestDescendents2(t *testing.T) {
 				"**.Price",
 				"**.Price[0]",
 			},
-			Output: []interface{}{
+			Output: []any{
 				34.45,
 				21.67,
 				34.45,
@@ -1928,7 +1928,7 @@ func TestBlockExpressions2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account.Order.Product.($var1 := Price ; $var2:=Quantity; $var1 * $var2)",
-			Output: []interface{}{
+			Output: []any{
 				68.9,
 				21.67,
 				137.8,
@@ -1956,24 +1956,24 @@ func TestArrayConstructor(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "[]",
-			Output:     []interface{}{},
+			Output:     []any{},
 		},
 		{
 			Expression: "[1]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 			},
 		},
 		{
 			Expression: "[1, 2]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 			},
 		},
 		{
 			Expression: "[1, 2,3]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -1981,10 +1981,10 @@ func TestArrayConstructor(t *testing.T) {
 		},
 		{
 			Expression: "[1, 2, [3, 4]]",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
-				[]interface{}{
+				[]any{
 					float64(3),
 					float64(4),
 				},
@@ -1992,10 +1992,10 @@ func TestArrayConstructor(t *testing.T) {
 		},
 		{
 			Expression: `[1, "two", ["three", 4]]`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				"two",
-				[]interface{}{
+				[]any{
 					"three",
 					float64(4),
 				},
@@ -2003,14 +2003,14 @@ func TestArrayConstructor(t *testing.T) {
 		},
 		{
 			Expression: `[1, $two, ["three", $four]]`,
-			Vars: map[string]interface{}{
+			Vars: map[string]any{
 				"two":  float64(2),
 				"four": "four",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
-				[]interface{}{
+				[]any{
 					"three",
 					"four",
 				},
@@ -2022,7 +2022,7 @@ func TestArrayConstructor(t *testing.T) {
 		},
 		{
 			Expression: "[1, 2, [3, 4]][-1]",
-			Output: []interface{}{
+			Output: []any{
 				float64(3),
 				float64(4),
 			},
@@ -2037,7 +2037,7 @@ func TestArrayConstructor(t *testing.T) {
 		},
 		{
 			Expression: "[1, 2, 3].$",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -2051,23 +2051,23 @@ func TestArrayConstructor2(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "foo.blah.baz.[fud]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					"hello",
 				},
-				[]interface{}{
+				[]any{
 					"world",
 				},
 			},
 		},
 		{
 			Expression: "foo.blah.baz.[fud, fud]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					"hello",
 					"hello",
 				},
-				[]interface{}{
+				[]any{
 					"world",
 					"world",
 				},
@@ -2075,15 +2075,15 @@ func TestArrayConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "foo.blah.baz.[[fud, fud]]",
-			Output: []interface{}{
-				[]interface{}{
-					[]interface{}{
+			Output: []any{
+				[]any{
+					[]any{
 						"hello",
 						"hello",
 					},
 				},
-				[]interface{}{
-					[]interface{}{
+				[]any{
+					[]any{
 						"world",
 						"world",
 					},
@@ -2092,15 +2092,15 @@ func TestArrayConstructor2(t *testing.T) {
 		},
 		{
 			Expression: `["foo.bar", foo.bar, ["foo.baz", foo.blah.baz]]`,
-			Output: []interface{}{
+			Output: []any{
 				"foo.bar",
 				float64(42),
-				[]interface{}{
+				[]any{
 					"foo.baz",
-					map[string]interface{}{
+					map[string]any{
 						"fud": "hello",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"fud": "world",
 					},
 				},
@@ -2120,7 +2120,7 @@ func TestArrayConstructor3(t *testing.T) {
 		},
 		{
 			Expression: "foo.blah.[baz, buz].fud",
-			Output: []interface{}{
+			Output: []any{
 				"hello",
 				"world",
 			},
@@ -2133,7 +2133,7 @@ func TestArrayConstructor4(t *testing.T) {
 	runTestCases(t, testdata.address, []*testCase{
 		{
 			Expression: "[Address, Other.`Alternative.Address`].City",
-			Output: []interface{}{
+			Output: []any{
 				"Winchester",
 				"London",
 			},
@@ -2143,12 +2143,12 @@ func TestArrayConstructor4(t *testing.T) {
 
 func TestArrayConstructor5(t *testing.T) {
 
-	data := []interface{}{}
+	data := []any{}
 
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: "[1, 2, 3].$",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -2159,12 +2159,12 @@ func TestArrayConstructor5(t *testing.T) {
 
 func TestArrayConstructor6(t *testing.T) {
 
-	data := []interface{}{4, 5, 6}
+	data := []any{4, 5, 6}
 
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: "[1, 2, 3].$",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -2178,17 +2178,17 @@ func TestObjectConstructor(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "{}",
-			Output:     map[string]interface{}{},
+			Output:     map[string]any{},
 		},
 		{
 			Expression: `{"key":"value"}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"key": "value",
 			},
 		},
 		{
 			Expression: `{"one": 1, "two": 2}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one": float64(1),
 				"two": float64(2),
 			},
@@ -2199,9 +2199,9 @@ func TestObjectConstructor(t *testing.T) {
 		},
 		{
 			Expression: `{"one": 1, "two": {"three": 3, "four": "4"}}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one": float64(1),
-				"two": map[string]interface{}{
+				"two": map[string]any{
 					"three": float64(3),
 					"four":  "4",
 				},
@@ -2209,9 +2209,9 @@ func TestObjectConstructor(t *testing.T) {
 		},
 		{
 			Expression: `{"one": 1, "two": [3, "four"]}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one": float64(1),
-				"two": []interface{}{
+				"two": []any{
 					float64(3),
 					"four",
 				},
@@ -2219,7 +2219,7 @@ func TestObjectConstructor(t *testing.T) {
 		},
 		{
 			Expression: `{"test": ()}`,
-			Output:     map[string]interface{}{},
+			Output:     map[string]any{},
 		},
 		{
 			Expression: `blah.{}`,
@@ -2233,12 +2233,12 @@ func TestObjectConstructor2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "Account.Order{OrderID: Product.`Product Name`}",
-			Output: map[string]interface{}{
-				"order103": []interface{}{
+			Output: map[string]any{
+				"order103": []any{
 					"Bowler Hat",
 					"Trilby hat",
 				},
-				"order104": []interface{}{
+				"order104": []any{
 					"Bowler Hat",
 					"Cloak",
 				},
@@ -2246,15 +2246,15 @@ func TestObjectConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.{OrderID: Product.`Product Name`}",
-			Output: []interface{}{
-				map[string]interface{}{
-					"order103": []interface{}{
+			Output: []any{
+				map[string]any{
+					"order103": []any{
 						"Bowler Hat",
 						"Trilby hat",
 					},
 				},
-				map[string]interface{}{
-					"order104": []interface{}{
+				map[string]any{
+					"order104": []any{
 						"Bowler Hat",
 						"Cloak",
 					},
@@ -2263,10 +2263,10 @@ func TestObjectConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.Product{$string(ProductID): Price}",
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"345664": 107.99,
 				"858236": 21.67,
-				"858383": []interface{}{
+				"858383": []any{
 					34.45,
 					34.45,
 				},
@@ -2274,7 +2274,7 @@ func TestObjectConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.Product{$string(ProductID): (Price)[0]}",
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"345664": 107.99,
 				"858236": 21.67,
 				"858383": 34.45,
@@ -2282,17 +2282,17 @@ func TestObjectConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.Product.{$string(ProductID): Price}",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"858383": 34.45,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"858236": 21.67,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"858383": 34.45,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"345664": 107.99,
 				},
 			},
@@ -2313,17 +2313,17 @@ func TestObjectConstructor2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order{OrderID: $sum(Product.(Price*Quantity))}",
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"order103": 90.57000000000001,
 				"order104": 245.79000000000002,
 			},
 		},
 		{
 			Expression: "Account.Order.{OrderID: $sum(Product.(Price*Quantity))}",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"order103": 90.57000000000001,
-				}, map[string]interface{}{
+				}, map[string]any{
 					"order104": 245.79000000000002,
 				},
 			},
@@ -2344,17 +2344,17 @@ func TestObjectConstructor2(t *testing.T) {
 						"Items": Product.` + "`Product Name`" + `
 					}
 				}`,
-			Output: map[string]interface{}{
-				"order103": map[string]interface{}{
+			Output: map[string]any{
+				"order103": map[string]any{
 					"TotalPrice": 90.57000000000001,
-					"Items": []interface{}{
+					"Items": []any{
 						"Bowler Hat",
 						"Trilby hat",
 					},
 				},
-				"order104": map[string]interface{}{
+				"order104": map[string]any{
 					"TotalPrice": 245.79000000000002,
-					"Items": []interface{}{
+					"Items": []any{
 						"Bowler Hat",
 						"Cloak",
 					},
@@ -2377,23 +2377,23 @@ func TestObjectConstructor2(t *testing.T) {
 						"Total Price": $sum(Product.(Price * Quantity))
 					}
 				}`,
-			Output: map[string]interface{}{
-				"Order": []interface{}{
-					map[string]interface{}{
+			Output: map[string]any{
+				"Order": []any{
+					map[string]any{
 						"ID": "order103",
-						"Product": []interface{}{
-							map[string]interface{}{
+						"Product": []any{
+							map[string]any{
 								"Name": "Bowler Hat",
 								"SKU":  float64(858383),
-								"Details": map[string]interface{}{
+								"Details": map[string]any{
 									"Weight":     0.75,
 									"Dimensions": "300 x 200 x 210",
 								},
 							},
-							map[string]interface{}{
+							map[string]any{
 								"Name": "Trilby hat",
 								"SKU":  float64(858236),
-								"Details": map[string]interface{}{
+								"Details": map[string]any{
 									"Weight":     0.6,
 									"Dimensions": "300 x 200 x 210",
 								},
@@ -2401,21 +2401,21 @@ func TestObjectConstructor2(t *testing.T) {
 						},
 						"Total Price": 90.57000000000001,
 					},
-					map[string]interface{}{
+					map[string]any{
 						"ID": "order104",
-						"Product": []interface{}{
-							map[string]interface{}{
+						"Product": []any{
+							map[string]any{
 								"Name": "Bowler Hat",
 								"SKU":  float64(858383),
-								"Details": map[string]interface{}{
+								"Details": map[string]any{
 									"Weight":     0.75,
 									"Dimensions": "300 x 200 x 210",
 								},
 							},
-							map[string]interface{}{
+							map[string]any{
 								"Name": "Cloak",
 								"SKU":  float64(345664),
-								"Details": map[string]interface{}{
+								"Details": map[string]any{
 									"Weight":     float64(2),
 									"Dimensions": "30 x 20 x 210",
 								},
@@ -2434,9 +2434,9 @@ func TestObjectConstructor3(t *testing.T) {
 	runTestCases(t, testdata.address, []*testCase{
 		{
 			Expression: `Phone{type: $join(number, ", "), "phone":number}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"home": "0203 544 1234",
-				"phone": []interface{}{
+				"phone": []any{
 					"0203 544 1234",
 					"01962 001234",
 					"01962 001235",
@@ -2454,7 +2454,7 @@ func TestRangeOperator(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "[0..9]",
-			Output: []interface{}{
+			Output: []any{
 				float64(0),
 				float64(1),
 				float64(2),
@@ -2469,7 +2469,7 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[0..9][$ % 2 = 0]",
-			Output: []interface{}{
+			Output: []any{
 				float64(0),
 				float64(2),
 				float64(4),
@@ -2480,7 +2480,7 @@ func TestRangeOperator(t *testing.T) {
 
 		{
 			Expression: "[0, 4..9, 20, 22]",
-			Output: []interface{}{
+			Output: []any{
 				float64(0),
 				float64(4),
 				float64(5),
@@ -2494,17 +2494,17 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[5..5]",
-			Output: []interface{}{
+			Output: []any{
 				float64(5),
 			},
 		},
 		{
 			Expression: "[5..2]",
-			Output:     []interface{}{},
+			Output:     []any{},
 		},
 		{
 			Expression: "[5..2, 2..5]",
-			Output: []interface{}{
+			Output: []any{
 				float64(2),
 				float64(3),
 				float64(4),
@@ -2513,7 +2513,7 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[-2..2]",
-			Output: []interface{}{
+			Output: []any{
 				float64(-2),
 				float64(-1),
 				float64(0),
@@ -2523,7 +2523,7 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[-2..2].($*$)",
-			Output: []interface{}{
+			Output: []any{
 				float64(4),
 				float64(1),
 				float64(0),
@@ -2533,7 +2533,7 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[2*4..3*4-1]",
-			Output: []interface{}{
+			Output: []any{
 				float64(8),
 				float64(9),
 				float64(10),
@@ -2542,11 +2542,11 @@ func TestRangeOperator(t *testing.T) {
 		},
 		{
 			Expression: "[-2..notfound]",
-			Output:     []interface{}{},
+			Output:     []any{},
 		},
 		{
 			Expression: "[notfound..5, 3, -2..notfound]",
-			Output: []interface{}{
+			Output: []any{
 				float64(3),
 			},
 		},
@@ -2684,7 +2684,7 @@ func TestConditionals5(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product.(Price < 30 ? "Cheap" : "Expensive")`,
-			Output: []interface{}{
+			Output: []any{
 				"Expensive",
 				"Cheap",
 				"Expensive",
@@ -2693,7 +2693,7 @@ func TestConditionals5(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product.(Price < 30 ? "Cheap" : Price < 100 ? "Expensive" : "Rip off")`,
-			Output: []interface{}{
+			Output: []any{
 				"Expensive",
 				"Cheap",
 				"Expensive",
@@ -2735,7 +2735,7 @@ func TestBooleanExpressions(t *testing.T) {
 
 func TestBooleanExpressions2(t *testing.T) {
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"and": 1,
 		"or":  2,
 	}
@@ -2760,10 +2760,10 @@ func TestBooleanExpressions2(t *testing.T) {
 
 func TestBooleanExpressions3(t *testing.T) {
 
-	data := []interface{}{
-		map[string]interface{}{
-			"content": map[string]interface{}{
-				"origin": map[string]interface{}{
+	data := []any{
+		map[string]any{
+			"content": map[string]any{
+				"origin": map[string]any{
 					"name": "fakeIntegrationName",
 				},
 			},
@@ -2773,7 +2773,7 @@ func TestBooleanExpressions3(t *testing.T) {
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: `$[].content.origin.$lowercase(name)`,
-			Output: []interface{}{
+			Output: []any{
 				"fakeintegrationname",
 			},
 		},
@@ -2789,14 +2789,14 @@ func TestNullExpressions(t *testing.T) {
 		},
 		{
 			Expression: "[null]",
-			Output: []interface{}{
+			Output: []any{
 				nil,
 			},
 			Skip: true, // uses the wrong kind of nil (*interface{}(nil) instead of plain nil)?
 		},
 		{
 			Expression: "[null, null]",
-			Output: []interface{}{
+			Output: []any{
 				nil,
 				nil,
 			},
@@ -2816,7 +2816,7 @@ func TestNullExpressions(t *testing.T) {
 		},
 		{
 			Expression: `{"true": true, "false":false, "null": null}`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"true":  true,
 				"false": false,
 				"null":  nil,
@@ -2831,9 +2831,9 @@ func TestVariables(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "$price.foo.bar",
-			Vars: map[string]interface{}{
-				"price": map[string]interface{}{
-					"foo": map[string]interface{}{
+			Vars: map[string]any{
+				"price": map[string]any{
+					"foo": map[string]any{
 						"bar": 45,
 					},
 				},
@@ -2842,8 +2842,8 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Expression: "$var[1]",
-			Vars: map[string]interface{}{
-				"var": []interface{}{
+			Vars: map[string]any{
+				"var": []any{
 					1,
 					2,
 					3,
@@ -2853,8 +2853,8 @@ func TestVariables(t *testing.T) {
 		},
 		{
 			Expression: "[1,2,3].$v",
-			Vars: map[string]interface{}{
-				"v": []interface{}{
+			Vars: map[string]any{
+				"v": []any{
 					nil,
 				},
 			},
@@ -2891,9 +2891,9 @@ func TestVariables2(t *testing.T) {
 	runTestCases(t, testdata.foobar, []*testCase{
 		{
 			Expression: "$.foo.bar",
-			Vars: map[string]interface{}{
-				"price": map[string]interface{}{
-					"foo": map[string]interface{}{
+			Vars: map[string]any{
+				"price": map[string]any{
+					"foo": map[string]any{
 						"bar": 45,
 					},
 				},
@@ -2938,7 +2938,7 @@ func TestLambdas(t *testing.T) {
 		},
 		{
 			Expression: `($fibonacci := function($x){$x <= 1 ? $x : $fibonacci($x-1) + $fibonacci($x-2)}; [1,2,3,4,5,6,7,8,9].$fibonacci($))`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(1),
 				float64(2),
@@ -2983,7 +2983,7 @@ func TestLambdas(t *testing.T) {
 					$gcd := λ($a, $b){$b = 0 ? $a : $gcd($b, $a%$b) };
 					[$gcd(8,12), $gcd(9,12)]
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(4),
 				float64(3),
 			},
@@ -2997,7 +2997,7 @@ func TestLambdas(t *testing.T) {
 					)};
 					$range(0,15)
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(0),
 				float64(1),
 				float64(2),
@@ -3025,7 +3025,7 @@ func TestLambdas(t *testing.T) {
 					)};
 					$range(0,15,2)
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(0),
 				float64(2),
 				float64(4),
@@ -3360,14 +3360,14 @@ func TestFuncCount2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.$count(Product.(Price * Quantity))",
-			Output: []interface{}{
+			Output: []any{
 				2,
 				2,
 			},
 		},
 		{
 			Expression: `Account.Order.(OrderID & ": " & $count(Product.(Price*Quantity)))`,
-			Output: []interface{}{
+			Output: []any{
 				"order103: 2",
 				"order104: 2",
 			},
@@ -3383,21 +3383,21 @@ func TestFuncAppend(t *testing.T) {
 				"$append([], [])",
 				"$append([nothing], [nothing])",
 			},
-			Output: []interface{}{},
+			Output: []any{},
 		},
 		{
 			Expression: []string{
 				"$append(1, 2)",
 				"$append([1], [2])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 			},
 		},
 		{
 			Expression: "$append([1,2], [3,4])",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -3413,7 +3413,7 @@ func TestFuncAppend(t *testing.T) {
 				"$append([1,3,4], [nothing])",
 				"$append([1,3,4], [nothing,nada])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(3),
 				float64(4),
@@ -3433,7 +3433,7 @@ func TestFuncAppend(t *testing.T) {
 				"$append(nothing, [1])",
 				"$append(nothing, [1,nothing])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 			},
 		},
@@ -3444,7 +3444,7 @@ func TestFuncAppend(t *testing.T) {
 				"$append([2], [3,4,nothing])",
 				"$append(2, [3,4,nothing])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(2),
 				float64(3),
 				float64(4),
@@ -3490,14 +3490,14 @@ func TestFuncReverse(t *testing.T) {
 				"$reverse([])",
 				"$reverse([nothing])",
 			},
-			Output: []interface{}{},
+			Output: []any{},
 		},
 		{
 			Expression: []string{
 				"$reverse(1)",
 				"$reverse([1])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 			},
 		},
@@ -3506,7 +3506,7 @@ func TestFuncReverse(t *testing.T) {
 				"$reverse([1..5])",
 				"$reverse([1,2,3,4,nothing,5,nada])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(5),
 				float64(4),
 				float64(3),
@@ -3516,20 +3516,20 @@ func TestFuncReverse(t *testing.T) {
 		},
 		{
 			Expression: `$reverse(["hello","world"])`,
-			Output: []interface{}{
+			Output: []any{
 				"world",
 				"hello",
 			},
 		},
 		{
 			Expression: `$reverse([true,0.5,"hello",{"one":1},[1,2,3]])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					float64(2),
 					float64(3),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"one": float64(1),
 				},
 				"hello",
@@ -3570,23 +3570,23 @@ func TestFuncReverse(t *testing.T) {
 
 func TestFuncReverse2(t *testing.T) {
 
-	data := []interface{}{1, 2, 3}
+	data := []any{1, 2, 3}
 
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: "[$, $reverse($), $]",
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					1,
 					2,
 					3,
 				},
-				[]interface{}{
+				[]any{
 					3,
 					2,
 					1,
 				},
-				[]interface{}{
+				[]any{
 					1,
 					2,
 					3,
@@ -3609,13 +3609,13 @@ func TestFuncSort(t *testing.T) {
 				"$sort(1)",
 				"$sort([1])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 			},
 		},
 		{
 			Expression: "$sort([1,3,2])",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -3623,7 +3623,7 @@ func TestFuncSort(t *testing.T) {
 		},
 		{
 			Expression: "$sort([1,3,22,11])",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(3),
 				float64(11),
@@ -3638,7 +3638,7 @@ func TestFuncSort2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: "$sort(Account.Order.Product.Price)",
-			Output: []interface{}{
+			Output: []any{
 				21.67,
 				34.45,
 				34.45,
@@ -3647,7 +3647,7 @@ func TestFuncSort2(t *testing.T) {
 		},
 		{
 			Expression: "$sort(Account.Order.Product.`Product Name`)",
-			Output: []interface{}{
+			Output: []any{
 				"Bowler Hat",
 				"Bowler Hat",
 				"Cloak",
@@ -3656,7 +3656,7 @@ func TestFuncSort2(t *testing.T) {
 		},
 		{
 			Expression: `$sort(Account.Order.Product, function($a, $b) { $a.(Price * Quantity) > $b.(Price * Quantity) }).(Price & " x " & Quantity)`,
-			Output: []interface{}{
+			Output: []any{
 				"21.67 x 1",
 				"34.45 x 2",
 				"107.99 x 1",
@@ -3665,7 +3665,7 @@ func TestFuncSort2(t *testing.T) {
 		},
 		{
 			Expression: `$sort(Account.Order.Product, function($a, $b) { $a.Price > $b.Price }).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"0406634348",
 				"0406654608",
 				"040657863",
@@ -3678,7 +3678,7 @@ func TestFuncSort2(t *testing.T) {
 					~> $sort(λ($a,$b){$a.Quantity < $b.Quantity})
 					~> $sort(λ($a,$b){$a.Price > $b.Price})
 				).SKU`,
-			Output: []interface{}{
+			Output: []any{
 				"0406634348",
 				"040657863",
 				"0406654608",
@@ -3694,12 +3694,12 @@ func TestFuncSort2(t *testing.T) {
 
 func TestFuncSort3(t *testing.T) {
 
-	data := []interface{}{1, 3, 2}
+	data := []any{1, 3, 2}
 
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: "[[$], [$sort($)], [$]]",
-			Output: []interface{}{
+			Output: []any{
 				[]float64{
 					1,
 					3,
@@ -3729,14 +3729,14 @@ func TestFuncShuffle(t *testing.T) {
 				"$shuffle([])",
 				"$shuffle([nothing])",
 			},
-			Output: []interface{}{},
+			Output: []any{},
 		},
 		{
 			Expression: []string{
 				"$shuffle(1)",
 				"$shuffle([1])",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 			},
 		},
@@ -3746,7 +3746,7 @@ func TestFuncShuffle(t *testing.T) {
 		},
 		{
 			Expression: "$sort($shuffle([1..10]))",
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -3800,7 +3800,7 @@ func TestFuncShuffle2(t *testing.T) {
 				"$shuffle([1..10])",
 				"$shuffle($reverse([1..10]))",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -3815,16 +3815,16 @@ func TestFuncShuffle2(t *testing.T) {
 		},
 		{
 			Expression: `$shuffle([true,-0.5,"hello",[1,2,3],{"one":1}])`,
-			Output: []interface{}{
+			Output: []any{
 				true,
 				-0.5,
 				"hello",
-				[]interface{}{
+				[]any{
 					float64(1),
 					float64(2),
 					float64(3),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"one": float64(1),
 				},
 			},
@@ -3842,8 +3842,8 @@ func TestFuncZip(t *testing.T) {
 				`$zip([1],[2],[3])`,
 				`$zip([1],[2,3],[3,4,5])`,
 			},
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					float64(2),
 					float64(3),
@@ -3852,30 +3852,30 @@ func TestFuncZip(t *testing.T) {
 		},
 		{
 			Expression: `$zip([1,2,3])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 				},
-				[]interface{}{
+				[]any{
 					float64(2),
 				},
-				[]interface{}{
+				[]any{
 					float64(3),
 				},
 			},
 		},
 		{
 			Expression: `$zip([1,2,3],["one","two","three"])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					"one",
 				},
-				[]interface{}{
+				[]any{
 					float64(2),
 					"two",
 				},
-				[]interface{}{
+				[]any{
 					float64(3),
 					"three",
 				},
@@ -3883,18 +3883,18 @@ func TestFuncZip(t *testing.T) {
 		},
 		{
 			Expression: `$zip([1,2,3],["one","two","three"],[true,false,true])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					"one",
 					true,
 				},
-				[]interface{}{
+				[]any{
 					float64(2),
 					"two",
 					false,
 				},
-				[]interface{}{
+				[]any{
 					float64(3),
 					"three",
 					true,
@@ -3903,13 +3903,13 @@ func TestFuncZip(t *testing.T) {
 		},
 		{
 			Expression: `$zip([1,2,3],["one","two"],[true,false,true])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 					"one",
 					true,
 				},
-				[]interface{}{
+				[]any{
 					float64(2),
 					"two",
 					false,
@@ -3925,7 +3925,7 @@ func TestFuncZip(t *testing.T) {
 				`$zip([1,2,3],[nothing])`,
 				`$zip([1,2,3],[nothing,nada,now't])`,
 			},
-			Output: []interface{}{},
+			Output: []any{},
 		},
 		{
 			Expression: `$zip()`,
@@ -4009,14 +4009,14 @@ func TestFuncSum2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.$sum(Product.(Price * Quantity))",
-			Output: []interface{}{
+			Output: []any{
 				90.57000000000001,
 				245.79000000000002,
 			},
 		},
 		{
 			Expression: `Account.Order.(OrderID & ": " & $sum(Product.(Price*Quantity)))`,
-			Output: []interface{}{
+			Output: []any{
 				"order103: 90.57",
 				"order104: 245.79",
 			},
@@ -4120,7 +4120,7 @@ func TestFuncMax2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.$max(Product.(Price * Quantity))",
-			Output: []interface{}{
+			Output: []any{
 				68.9,
 				137.8,
 			},
@@ -4208,14 +4208,14 @@ func TestFuncMin2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.$min(Product.(Price * Quantity))",
-			Output: []interface{}{
+			Output: []any{
 				21.67,
 				107.99,
 			},
 		},
 		{
 			Expression: `Account.Order.(OrderID & ": " & $min(Product.(Price*Quantity)))`,
-			Output: []interface{}{
+			Output: []any{
 				"order103: 21.67",
 				"order104: 107.99",
 			},
@@ -4297,14 +4297,14 @@ func TestFuncAverage2(t *testing.T) {
 		},
 		{
 			Expression: "Account.Order.$average(Product.(Price * Quantity))",
-			Output: []interface{}{
+			Output: []any{
 				45.285000000000004,
 				122.89500000000001,
 			},
 		},
 		{
 			Expression: `Account.Order.(OrderID & ": " & $average(Product.(Price*Quantity)))`,
-			Output: []interface{}{
+			Output: []any{
 				"order103: 45.285",
 				"order104: 122.895",
 			},
@@ -4321,7 +4321,7 @@ func TestFuncSpread(t *testing.T) {
 		},
 		{
 			Expression: `$spread([1,2,3])`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -4340,7 +4340,7 @@ func TestFuncSpread(t *testing.T) {
 
 func TestFuncSpread2(t *testing.T) {
 
-	data := []map[string]interface{}{
+	data := []map[string]any{
 		{
 			"one": 1,
 		},
@@ -4355,22 +4355,22 @@ func TestFuncSpread2(t *testing.T) {
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: `$spread($[0])`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"one": 1,
 				},
 			},
 		},
 		{
 			Expression: `$spread($)`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"one": 1,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"two": 2,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"three": 3,
 				},
 			},
@@ -4383,65 +4383,65 @@ func TestFuncSpread3(t *testing.T) {
 	runTestCasesFunc(t, equalArraysUnordered, testdata.account, []*testCase{
 		{
 			Expression: "$spread((Account.Order.Product.Description))",
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"Colour": "Purple",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Width": float64(300),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Height": float64(200),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Depth": float64(210),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Weight": 0.75,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Colour": "Orange",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Width": float64(300),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Height": float64(200),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Depth": float64(210),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Weight": 0.6,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Colour": "Purple",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Width": float64(300),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Height": float64(200),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Depth": float64(210),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Weight": 0.75,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Colour": "Black",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Width": float64(30),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Height": float64(20),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Depth": float64(210),
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Weight": float64(2),
 				},
 			},
@@ -4546,20 +4546,20 @@ func TestFuncMerge(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: `$merge({"a":1})`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": float64(1),
 			},
 		},
 		{
 			Expression: `$merge([{"a":1}, {"b":2}])`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": float64(1),
 				"b": float64(2),
 			},
 		},
 		{
 			Expression: `$merge([{"a": 1}, {"b": 2, "c": 3}])`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": float64(1),
 				"b": float64(2),
 				"c": float64(3),
@@ -4567,7 +4567,7 @@ func TestFuncMerge(t *testing.T) {
 		},
 		{
 			Expression: `$merge([{"a": 1}, {"b": 2, "a": 3}])`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": float64(3),
 				"b": float64(2),
 			},
@@ -4577,7 +4577,7 @@ func TestFuncMerge(t *testing.T) {
 				`$merge([])`,
 				`$merge({})`,
 			},
-			Output: map[string]interface{}{},
+			Output: map[string]any{},
 		},
 		{
 			Expression: `$merge(nothing)`,
@@ -4591,7 +4591,7 @@ func TestFuncEach(t *testing.T) {
 	runTestCasesFunc(t, equalArraysUnordered, testdata.address, []*testCase{
 		{
 			Expression: `$each(Address, λ($v, $k) {$k & ": " & $v})`,
-			Output: []interface{}{
+			Output: []any{
 				"Street: Hursley Park",
 				"City: Winchester",
 				"Postcode: SO21 2JN",
@@ -4605,7 +4605,7 @@ func TestFuncMap(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: `$map([1,2,3], $string)`,
-			Output: []interface{}{
+			Output: []any{
 				"1",
 				"2",
 				"3",
@@ -4620,7 +4620,7 @@ func TestFuncMap(t *testing.T) {
 					},
 				},
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -4637,7 +4637,7 @@ func TestFuncMap(t *testing.T) {
 					$add := function($x){$x*$x};
 					$map($data.one, $add)
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(4),
 				float64(9),
@@ -4661,7 +4661,7 @@ func TestFuncMap2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `Account.Order.Product ~> $map(λ($prod, $index) { $index+1 & ": " & $prod.` + "`Product Name`" + ` })`,
-			Output: []interface{}{
+			Output: []any{
 				"1: Bowler Hat",
 				"2: Trilby hat",
 				"3: Bowler Hat",
@@ -4670,7 +4670,7 @@ func TestFuncMap2(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order.Product ~> $map(λ($prod, $index, $arr) { $index+1 & "/" & $count($arr) & ": " & $prod.` + "`Product Name`" + ` })`,
-			Output: []interface{}{
+			Output: []any{
 				"1/4: Bowler Hat",
 				"2/4: Trilby hat",
 				"3/4: Bowler Hat",
@@ -4692,14 +4692,14 @@ func TestFuncMap3(t *testing.T) {
 				`$map(Phone, function($v, $i) {$i[$v.type="office"]})`,
 				`$map(Phone, function($v, $i) {$v.type="office" ? $i})`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				1,
 				2,
 			},
 		},
 		{
 			Expression: `$map(Phone, function($v, $i) {$v.type="office" ? $i: null})`,
-			Output: []interface{}{
+			Output: []any{
 				nil,
 				1,
 				2,
@@ -4730,7 +4730,7 @@ func TestFuncMapZip(t *testing.T) {
 					$data.$zip(one, two) ~> $map($sum)
 				)`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(6),
 				float64(6),
 				float64(6),
@@ -4755,7 +4755,7 @@ func TestFuncMapZip(t *testing.T) {
 					$data[].$zip(one, two) ~> $map($sum)
 				)`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(6),
 			},
 		},
@@ -4767,7 +4767,7 @@ func TestFuncFilter(t *testing.T) {
 	runTestCases(t, testdata.library, []*testCase{
 		{
 			Expression: `$filter([1..10], function($v) {$v % 2})`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(3),
 				float64(5),
@@ -4835,7 +4835,7 @@ func TestFuncReduce(t *testing.T) {
 					$power := function($x, $n) { $n = 0 ? 1 : $reduce([1..$n].($x), $product) };
 					[0..5].$power(2, $)
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(4),
@@ -4860,7 +4860,7 @@ func TestFuncReduce2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `$reduce(Account.Order.Product.Quantity, $append)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(2),
 				float64(1),
 				float64(4),
@@ -4900,7 +4900,7 @@ func TestFuncSift(t *testing.T) {
 					};
 					$sift($data, function($v){$v % 2})
 				)`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one":   float64(1),
 				"three": float64(3),
 				"five":  float64(5),
@@ -4925,7 +4925,7 @@ func TestFuncSift(t *testing.T) {
 					};
 					$sift($data, function($v,$k){$contains($k,"o")})
 				)`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one":  float64(1),
 				"two":  float64(2),
 				"four": float64(4),
@@ -4948,7 +4948,7 @@ func TestFuncSift(t *testing.T) {
 					};
 					$sift($data, function($v,$k){$length($k) >= $v})
 				)`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"one":   float64(1),
 				"two":   float64(2),
 				"three": float64(3),
@@ -4963,16 +4963,16 @@ func TestFuncSift2(t *testing.T) {
 	runTestCases(t, testdata.address, []*testCase{
 		{
 			Expression: `$sift(λ($v){$v.**.Postcode})`,
-			Output: map[string]interface{}{
-				"Address": map[string]interface{}{
+			Output: map[string]any{
+				"Address": map[string]any{
 					"Street":   "Hursley Park",
 					"City":     "Winchester",
 					"Postcode": "SO21 2JN",
 				},
-				"Other": map[string]interface{}{
+				"Other": map[string]any{
 					"Over 18 ?": true,
 					"Misc":      nil,
-					"Alternative.Address": map[string]interface{}{
+					"Alternative.Address": map[string]any{
 						"Street":   "Brick Lane",
 						"City":     "London",
 						"Postcode": "E1 6RF",
@@ -4982,16 +4982,16 @@ func TestFuncSift2(t *testing.T) {
 		},
 		{
 			Expression: `**[*].$sift(λ($v){$v.Postcode})`,
-			Output: []interface{}{
-				map[string]interface{}{
-					"Address": map[string]interface{}{
+			Output: []any{
+				map[string]any{
+					"Address": map[string]any{
 						"Street":   "Hursley Park",
 						"City":     "Winchester",
 						"Postcode": "SO21 2JN",
 					},
 				},
-				map[string]interface{}{
-					"Alternative.Address": map[string]interface{}{
+				map[string]any{
+					"Alternative.Address": map[string]any{
 						"Street":   "Brick Lane",
 						"City":     "London",
 						"Postcode": "E1 6RF",
@@ -5004,9 +5004,9 @@ func TestFuncSift2(t *testing.T) {
 				`$sift(λ($v, $k){$match($k, /^A/)})`,
 				`$sift(λ($v, $k){$k ~> /^A/})`,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"Age": float64(28),
-				"Address": map[string]interface{}{
+				"Address": map[string]any{
 					"Street":   "Hursley Park",
 					"City":     "Winchester",
 					"Postcode": "SO21 2JN",
@@ -5052,7 +5052,7 @@ func TestClosures(t *testing.T) {
 						"SKU-" & $string(ProductID): $.` + "`Product Name`" + `
 					}
 				)`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"Account":    "Firefly",
 				"SKU-858383": "Bowler Hat",
 				"SKU-345664": "Cloak",
@@ -5183,7 +5183,7 @@ func TestFuncString2(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `Account.Order.$string($sum(Product.(Price* Quantity)))`,
-			Output: []interface{}{
+			Output: []any{
 				"90.57",
 				"245.79",
 			},
@@ -6435,7 +6435,7 @@ func TestFuncLookup(t *testing.T) {
 		},
 		{
 			Expression: `$lookup(Account.Order.Product, "Product Name")`,
-			Output: []interface{}{
+			Output: []any{
 				"Bowler Hat",
 				"Trilby hat",
 				"Bowler Hat",
@@ -6452,7 +6452,7 @@ func TestFuncLookup(t *testing.T) {
 
 func TestFuncLookup2(t *testing.T) {
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"temp":      22.7,
 		"wind":      7,
 		"gust":      nil,
@@ -6485,7 +6485,7 @@ func TestDefaultContext2(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: "[1..5].$string()",
-			Output: []interface{}{
+			Output: []any{
 				"1",
 				"2",
 				"3",
@@ -6495,7 +6495,7 @@ func TestDefaultContext2(t *testing.T) {
 		},
 		{
 			Expression: `[1..5].("Item " & $string())`,
-			Output: []interface{}{
+			Output: []any{
 				"Item 1",
 				"Item 2",
 				"Item 3",
@@ -6511,7 +6511,7 @@ func TestDefaultContext3(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `Account.Order.Product.` + "`Product Name`" + `.$uppercase().$substringBefore(" ")`,
-			Output: []interface{}{
+			Output: []any{
 				"BOWLER",
 				"TRILBY",
 				"BOWLER",
@@ -6550,7 +6550,7 @@ func TestApplyOperator(t *testing.T) {
 					$square := function($x){$x*$x};
 					[1..5] ~> $map($square)
 				)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(4),
 				float64(9),
@@ -6693,21 +6693,21 @@ func TestTransformOperator(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `$ ~> |Account.Order.Product|{"Total":Price*Quantity},["Description", "SKU"]|`,
-			Output: map[string]interface{}{
-				"Account": map[string]interface{}{
+			Output: map[string]any{
+				"Account": map[string]any{
 					"Account Name": "Firefly",
-					"Order": []interface{}{
-						map[string]interface{}{
+					"Order": []any{
+						map[string]any{
 							"OrderID": "order103",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"Price":        34.45,
 									"Quantity":     float64(2),
 									"Total":        68.9,
 								},
-								map[string]interface{}{
+								map[string]any{
 									"Product Name": "Trilby hat",
 									"ProductID":    float64(858236),
 									"Price":        21.67,
@@ -6716,17 +6716,17 @@ func TestTransformOperator(t *testing.T) {
 								},
 							},
 						},
-						map[string]interface{}{
+						map[string]any{
 							"OrderID": "order104",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"Price":        34.45,
 									"Quantity":     float64(4),
 									"Total":        137.8,
 								},
-								map[string]interface{}{
+								map[string]any{
 									"ProductID":    float64(345664),
 									"Product Name": "Cloak",
 									"Price":        107.99,
@@ -6741,18 +6741,18 @@ func TestTransformOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account.Order ~> |Product|{"Total":Price*Quantity},["Description", "SKU"]|`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"OrderID": "order103",
-					"Product": []interface{}{
-						map[string]interface{}{
+					"Product": []any{
+						map[string]any{
 							"Product Name": "Bowler Hat",
 							"ProductID":    float64(858383),
 							"Price":        34.45,
 							"Quantity":     float64(2),
 							"Total":        68.9,
 						},
-						map[string]interface{}{
+						map[string]any{
 							"Product Name": "Trilby hat",
 							"ProductID":    float64(858236),
 							"Price":        21.67,
@@ -6761,17 +6761,17 @@ func TestTransformOperator(t *testing.T) {
 						},
 					},
 				},
-				map[string]interface{}{
+				map[string]any{
 					"OrderID": "order104",
-					"Product": []interface{}{
-						map[string]interface{}{
+					"Product": []any{
+						map[string]any{
 							"Product Name": "Bowler Hat",
 							"ProductID":    float64(858383),
 							"Price":        34.45,
 							"Quantity":     float64(4),
 							"Total":        137.8,
 						},
-						map[string]interface{}{
+						map[string]any{
 							"ProductID":    float64(345664),
 							"Product Name": "Cloak",
 							"Price":        107.99,
@@ -6784,18 +6784,18 @@ func TestTransformOperator(t *testing.T) {
 		},
 		{
 			Expression: `$ ~> |Account.Order.Product|{"Total":Price*Quantity, "Price": Price * 1.2}|`,
-			Output: map[string]interface{}{
-				"Account": map[string]interface{}{
+			Output: map[string]any{
+				"Account": map[string]any{
 					"Account Name": "Firefly",
-					"Order": []interface{}{
-						map[string]interface{}{
+					"Order": []any{
+						map[string]any{
 							"OrderID": "order103",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "0406654608",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Purple",
 										"Width":  float64(300),
 										"Height": float64(200),
@@ -6806,11 +6806,11 @@ func TestTransformOperator(t *testing.T) {
 									"Quantity": float64(2),
 									"Total":    68.9,
 								},
-								map[string]interface{}{
+								map[string]any{
 									"Product Name": "Trilby hat",
 									"ProductID":    float64(858236),
 									"SKU":          "0406634348",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Orange",
 										"Width":  float64(300),
 										"Height": float64(200),
@@ -6823,14 +6823,14 @@ func TestTransformOperator(t *testing.T) {
 								},
 							},
 						},
-						map[string]interface{}{
+						map[string]any{
 							"OrderID": "order104",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "040657863",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Purple",
 										"Width":  float64(300),
 										"Height": float64(200),
@@ -6841,11 +6841,11 @@ func TestTransformOperator(t *testing.T) {
 									"Quantity": float64(4),
 									"Total":    137.8,
 								},
-								map[string]interface{}{
+								map[string]any{
 									"ProductID":    float64(345664),
 									"SKU":          "0406654603",
 									"Product Name": "Cloak",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Black",
 										"Width":  float64(30),
 										"Height": float64(20),
@@ -6867,21 +6867,21 @@ func TestTransformOperator(t *testing.T) {
 				`$ ~> |Account.Order.Product|{},"Description"|`,
 				`$ ~> |Account.Order.Product|nomatch,"Description"|`,
 			},
-			Output: map[string]interface{}{
-				"Account": map[string]interface{}{
+			Output: map[string]any{
+				"Account": map[string]any{
 					"Account Name": "Firefly",
-					"Order": []interface{}{
-						map[string]interface{}{
+					"Order": []any{
+						map[string]any{
 							"OrderID": "order103",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "0406654608",
 									"Price":        34.45,
 									"Quantity":     float64(2),
 								},
-								map[string]interface{}{
+								map[string]any{
 									"Product Name": "Trilby hat",
 									"ProductID":    float64(858236),
 									"SKU":          "0406634348",
@@ -6890,17 +6890,17 @@ func TestTransformOperator(t *testing.T) {
 								},
 							},
 						},
-						map[string]interface{}{
+						map[string]any{
 							"OrderID": "order104",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "040657863",
 									"Price":        34.45,
 									"Quantity":     float64(4),
 								},
-								map[string]interface{}{
+								map[string]any{
 									"ProductID":    float64(345664),
 									"SKU":          "0406654603",
 									"Product Name": "Cloak",
@@ -6915,14 +6915,14 @@ func TestTransformOperator(t *testing.T) {
 		},
 		{
 			Expression: `$ ~> |(Account.Order.Product)[0]|{"Description":"blah"}|`,
-			Output: map[string]interface{}{
-				"Account": map[string]interface{}{
+			Output: map[string]any{
+				"Account": map[string]any{
 					"Account Name": "Firefly",
-					"Order": []interface{}{
-						map[string]interface{}{
+					"Order": []any{
+						map[string]any{
 							"OrderID": "order103",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "0406654608",
@@ -6930,11 +6930,11 @@ func TestTransformOperator(t *testing.T) {
 									"Price":        34.45,
 									"Quantity":     float64(2),
 								},
-								map[string]interface{}{
+								map[string]any{
 									"Product Name": "Trilby hat",
 									"ProductID":    float64(858236),
 									"SKU":          "0406634348",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Orange",
 										"Width":  float64(300),
 										"Height": float64(200),
@@ -6946,14 +6946,14 @@ func TestTransformOperator(t *testing.T) {
 								},
 							},
 						},
-						map[string]interface{}{
+						map[string]any{
 							"OrderID": "order104",
-							"Product": []interface{}{
-								map[string]interface{}{
+							"Product": []any{
+								map[string]any{
 									"Product Name": "Bowler Hat",
 									"ProductID":    float64(858383),
 									"SKU":          "040657863",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Purple",
 										"Width":  float64(300),
 										"Height": float64(200),
@@ -6963,11 +6963,11 @@ func TestTransformOperator(t *testing.T) {
 									"Price":    34.45,
 									"Quantity": float64(4),
 								},
-								map[string]interface{}{
+								map[string]any{
 									"ProductID":    float64(345664),
 									"SKU":          "0406654603",
 									"Product Name": "Cloak",
-									"Description": map[string]interface{}{
+									"Description": map[string]any{
 										"Colour": "Black",
 										"Width":  float64(30),
 										"Height": float64(20),
@@ -6985,14 +6985,14 @@ func TestTransformOperator(t *testing.T) {
 		},
 		{
 			Expression: `Account ~> |Order|{"Product":"blah"},nomatch|`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"Account Name": "Firefly",
-				"Order": []interface{}{
-					map[string]interface{}{
+				"Order": []any{
+					map[string]any{
 						"OrderID": "order103",
 						"Product": "blah",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"OrderID": "order104",
 						"Product": "blah",
 					},
@@ -7001,7 +7001,7 @@ func TestTransformOperator(t *testing.T) {
 		},
 		{
 			Expression: `{"a": 1, "fn": function($x){$x}} ~> |$|{"a": 2}|`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a":  float64(2),
 				"fn": "",
 			},
@@ -7085,7 +7085,7 @@ func TestRegex(t *testing.T) {
 	runTestCasesFunc(t, equalRegexMatches, nil, []*testCase{
 		{
 			Expression: `/ab/ ("ab")`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match":  "ab",
 				"start":  0,
 				"end":    2,
@@ -7098,7 +7098,7 @@ func TestRegex(t *testing.T) {
 		},
 		{
 			Expression: `/ab+/ ("ababbabbcc")`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match":  "ab",
 				"start":  0,
 				"end":    2,
@@ -7107,7 +7107,7 @@ func TestRegex(t *testing.T) {
 		},
 		{
 			Expression: `/a(b+)/ ("ababbabbcc")`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match": "ab",
 				"start": 0,
 				"end":   2,
@@ -7118,7 +7118,7 @@ func TestRegex(t *testing.T) {
 		},
 		{
 			Expression: `/a(b+)/ ("ababbabbcc").next()`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match": "abb",
 				"start": 2,
 				"end":   5,
@@ -7129,7 +7129,7 @@ func TestRegex(t *testing.T) {
 		},
 		{
 			Expression: `/a(b+)/ ("ababbabbcc").next().next()`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match": "abb",
 				"start": 5,
 				"end":   8,
@@ -7147,7 +7147,7 @@ func TestRegex(t *testing.T) {
 				`/a(b+)/i ("Ababbabbcc")`,
 				`/(?i)a(b+)/ ("Ababbabbcc")`,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"match": "Ab",
 				"start": 0,
 				"end":   2,
@@ -7182,7 +7182,7 @@ func TestRegex2(t *testing.T) {
 				`Account.Order.Product[$.` + "`Product Name`" + ` ~> /hat/i].ProductID`,
 				`Account.Order.Product[$.` + "`Product Name`" + ` ~> /(?i)hat/].ProductID`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(858383),
 				float64(858236),
 				float64(858383),
@@ -7196,7 +7196,7 @@ func TestRegexMatch(t *testing.T) {
 	runTestCases(t, nil, []*testCase{
 		{
 			Expression: `$match("ababbabbcc",/ab/)`,
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match":  "ab",
 					"index":  0,
@@ -7216,7 +7216,7 @@ func TestRegexMatch(t *testing.T) {
 		},
 		{
 			Expression: `$match("ababbabbcc",/a(b+)/)`,
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match": "ab",
 					"index": 0,
@@ -7242,7 +7242,7 @@ func TestRegexMatch(t *testing.T) {
 		},
 		{
 			Expression: `$match("ababbabbcc",/a(b+)/, 1)`,
-			Output: []map[string]interface{}{
+			Output: []map[string]any{
 				{
 					"match": "ab",
 					"index": 0,
@@ -7257,7 +7257,7 @@ func TestRegexMatch(t *testing.T) {
 				`$match("ababbabbcc",/a(b+)/, 0)`,
 				`$match("ababbabbcc",/a(xb+)/)`,
 			},
-			Output: []map[string]interface{}{},
+			Output: []map[string]any{},
 		},
 		{
 			Expression: `$match(nothing,/a(xb+)/)`,
@@ -7419,7 +7419,7 @@ func TestRegexReplace2(t *testing.T) {
 				`Account.Order.Product.$replace($.` + "`Product Name`" + `, /hat/i, function($match) { "foo" })`,
 				`Account.Order.Product.$replace($.` + "`Product Name`" + `, /(?i)hat/, function($match) { "foo" })`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				"Bowler foo",
 				"Trilby foo",
 				"Bowler foo",
@@ -7431,7 +7431,7 @@ func TestRegexReplace2(t *testing.T) {
 				`Account.Order.Product.$replace($.` + "`Product Name`" + `, /(h)(at)/i, function($match) { $uppercase($match.match) })`,
 				`Account.Order.Product.$replace($.` + "`Product Name`" + `, /(?i)(h)(at)/, function($match) { $uppercase($match.match) })`,
 			},
-			Output: []interface{}{
+			Output: []any{
 				"Bowler HAT",
 				"Trilby HAT",
 				"Bowler HAT",
@@ -7488,7 +7488,7 @@ func TestRegexContains2(t *testing.T) {
 				"Account.Order.Product[$contains(`Product Name`, /hat/i)].ProductID",
 				"Account.Order.Product[$contains(`Product Name`, /(?i)hat/)].ProductID",
 			},
-			Output: []interface{}{
+			Output: []any{
 				float64(858383),
 				float64(858236),
 				float64(858383),
@@ -7687,7 +7687,7 @@ func TestLambdaSignatures(t *testing.T) {
 		},
 		{
 			Expression: `[1..5].function($x,$y)<n-n:n>{$x+$y}(2, 6)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(8),
 				float64(8),
 				float64(8),
@@ -7697,7 +7697,7 @@ func TestLambdaSignatures(t *testing.T) {
 		},
 		{
 			Expression: `[1..5].function($x,$y)<n-n:n>{$x+$y}(6)`,
-			Output: []interface{}{
+			Output: []any{
 				float64(7),
 				float64(8),
 				float64(9),
@@ -7743,14 +7743,14 @@ func TestLambdaSignatures(t *testing.T) {
 		},
 		{
 			Expression: `λ($obj)<o>{$obj}({"hello": "world"})`,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"hello": "world",
 			},
 		},
 		{
 			Expression: `λ($arr)<a<a<n>>>{$arr}([[1]])`,
-			Output: []interface{}{
-				[]interface{}{
+			Output: []any{
+				[]any{
 					float64(1),
 				},
 			},
@@ -7765,7 +7765,7 @@ func TestLambdaSignatures(t *testing.T) {
 		},
 		{
 			Expression: `[1..5].λ($num)<(ns)-:n>{$number($num)}()`,
-			Output: []interface{}{
+			Output: []any{
 				float64(1),
 				float64(2),
 				float64(3),
@@ -7827,7 +7827,7 @@ func TestLambdaSignatures3(t *testing.T) {
 	runTestCases(t, testdata.account, []*testCase{
 		{
 			Expression: `Account.Order.Product.Description.Colour.λ($str)<s->{$uppercase($str)}()`,
-			Output: []interface{}{
+			Output: []any{
 				"PURPLE",
 				"ORANGE",
 				"PURPLE",
@@ -7907,8 +7907,8 @@ func TestLambdaSignatureViolations(t *testing.T) {
 
 func TestTransform(t *testing.T) {
 
-	data := map[string]interface{}{
-		"state": map[string]interface{}{
+	data := map[string]any{
+		"state": map[string]any{
 			"tempReadings": []float64{
 				27.2,
 				28.9,
@@ -7922,7 +7922,7 @@ func TestTransform(t *testing.T) {
 			"maxTemperature":  28.9,
 			"minTemperature":  27.2,
 		},
-		"event": map[string]interface{}{
+		"event": map[string]any{
 			"t": 28.4,
 		},
 	}
@@ -7943,8 +7943,8 @@ func TestTransform(t *testing.T) {
 						"minTemperature": $min($tempReadings)
 					}
 				)`,
-			Output: map[string]interface{}{
-				"tempReadings": []interface{}{
+			Output: map[string]any{
+				"tempReadings": []any{
 					28.9,
 					float64(28),
 					28.2,
@@ -7962,13 +7962,13 @@ func TestTransform(t *testing.T) {
 
 // Helper functions
 
-type compareFunc func(interface{}, interface{}) bool
+type compareFunc func(any, any) bool
 
-func runTestCases(t *testing.T, input interface{}, tests []*testCase) {
+func runTestCases(t *testing.T, input any, tests []*testCase) {
 	runTestCasesFunc(t, reflect.DeepEqual, input, tests)
 }
 
-func runTestCasesFunc(t *testing.T, compare compareFunc, input interface{}, tests []*testCase) {
+func runTestCasesFunc(t *testing.T, compare compareFunc, input any, tests []*testCase) {
 
 	for _, test := range tests {
 		if test.Skip {
@@ -7979,7 +7979,7 @@ func runTestCasesFunc(t *testing.T, compare compareFunc, input interface{}, test
 	}
 }
 
-func runTestCase(t *testing.T, equal compareFunc, input interface{}, test *testCase) {
+func runTestCase(t *testing.T, equal compareFunc, input any, test *testCase) {
 
 	var exps []string
 
@@ -7992,7 +7992,7 @@ func runTestCase(t *testing.T, equal compareFunc, input interface{}, test *testC
 		t.Fatalf("Bad expression: %T %v", e, e)
 	}
 
-	var output interface{}
+	var output any
 
 	for _, exp := range exps {
 
@@ -8012,11 +8012,11 @@ func runTestCase(t *testing.T, equal compareFunc, input interface{}, test *testC
 	}
 }
 
-func equalRegexMatches(v1 interface{}, v2 interface{}) bool {
+func equalRegexMatches(v1 any, v2 any) bool {
 
-	makeMap := func(in interface{}) map[string]interface{} {
-		m := in.(map[string]interface{})
-		res := map[string]interface{}{}
+	makeMap := func(in any) map[string]any {
+		m := in.(map[string]any)
+		res := map[string]any{}
 		for k, v := range m {
 			if k != "next" {
 				res[k] = v
@@ -8035,8 +8035,8 @@ func equalRegexMatches(v1 interface{}, v2 interface{}) bool {
 	}
 }
 
-func equalFloats(tolerance float64) func(interface{}, interface{}) bool {
-	return func(v1, v2 interface{}) bool {
+func equalFloats(tolerance float64) func(any, any) bool {
+	return func(v1, v2 any) bool {
 
 		n1, ok := v1.(float64)
 		if !ok {
@@ -8052,7 +8052,7 @@ func equalFloats(tolerance float64) func(interface{}, interface{}) bool {
 	}
 }
 
-func equalArraysUnordered(a1, a2 interface{}) bool {
+func equalArraysUnordered(a1, a2 any) bool {
 
 	v1 := reflect.ValueOf(a1)
 	v2 := reflect.ValueOf(a2)

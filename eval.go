@@ -115,7 +115,7 @@ func evalBoolean(node *jparse.BooleanNode, data reflect.Value, env *environment)
 	return reflect.ValueOf(node.Value), nil
 }
 
-var null *interface{}
+var null *any
 
 func evalNull(node *jparse.NullNode, data reflect.Value, env *environment) (reflect.Value, error) {
 	return reflect.ValueOf(null), nil
@@ -450,7 +450,7 @@ func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (re
 	//
 	// 2. Items that evaluate to arrays may be flattened into their
 	//    individual elements, increasing the length of the array.
-	results := make([]interface{}, 0, len(node.Items))
+	results := make([]any, 0, len(node.Items))
 
 	for _, item := range node.Items {
 
@@ -507,7 +507,7 @@ func evalObject(node *jparse.ObjectNode, data reflect.Value, env *environment) (
 	}
 
 	nItems := dataArray.Len()
-	results := make(map[string]interface{}, len(keys))
+	results := make(map[string]any, len(keys))
 
 	for key, idx := range keys {
 
@@ -1442,20 +1442,20 @@ func makeArray(v reflect.Value) reflect.Value {
 	}
 }
 
-func panicf(format string, a ...interface{}) {
+func panicf(format string, a ...any) {
 	panic(fmt.Sprintf(format, a...))
 }
 
 // Sequence handling
 
 type sequence struct {
-	values         []interface{}
+	values         []any
 	keepSingletons bool
 }
 
 func newSequence(size int) *sequence {
 	return &sequence{
-		values: make([]interface{}, 0, size),
+		values: make([]any, 0, size),
 	}
 }
 
@@ -1463,7 +1463,7 @@ func (s *sequence) Len() int {
 	return len(s.values)
 }
 
-func (s *sequence) Append(v interface{}) {
+func (s *sequence) Append(v any) {
 	s.values = append(s.values, v)
 }
 

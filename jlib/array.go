@@ -28,7 +28,7 @@ func Count(v reflect.Value) int {
 }
 
 // Distinct returns the values passed in with any duplicates removed.
-func Distinct(v reflect.Value) interface{} {
+func Distinct(v reflect.Value) any {
 	v = jtypes.Resolve(v)
 
 	// To match the behavior of jsonata-js, if this is a string we should
@@ -39,7 +39,7 @@ func Distinct(v reflect.Value) interface{} {
 
 	if jtypes.IsArray(v) {
 		items := arrayify(v)
-		visited := make(map[interface{}]struct{})
+		visited := make(map[any]struct{})
 		distinctValues := reflect.MakeSlice(reflect.SliceOf(typeInterface), 0, 0)
 
 		for i := 0; i < items.Len(); i++ {
@@ -72,7 +72,7 @@ func Distinct(v reflect.Value) interface{} {
 }
 
 // Append (golint)
-func Append(v1, v2 reflect.Value) (interface{}, error) {
+func Append(v1, v2 reflect.Value) (any, error) {
 	if !v2.IsValid() && v1.IsValid() && v1.CanInterface() {
 		return v1.Interface(), nil
 	}
@@ -104,7 +104,7 @@ func Append(v1, v2 reflect.Value) (interface{}, error) {
 }
 
 // Reverse (golint)
-func Reverse(v reflect.Value) (interface{}, error) {
+func Reverse(v reflect.Value) (any, error) {
 	v = arrayify(v)
 	length := v.Len()
 
@@ -120,7 +120,7 @@ func Reverse(v reflect.Value) (interface{}, error) {
 }
 
 // Sort (golint)
-func Sort(v reflect.Value, swap jtypes.OptionalCallable) (interface{}, error) {
+func Sort(v reflect.Value, swap jtypes.OptionalCallable) (any, error) {
 	v = jtypes.Resolve(v)
 
 	switch {
@@ -128,7 +128,7 @@ func Sort(v reflect.Value, swap jtypes.OptionalCallable) (interface{}, error) {
 		return nil, jtypes.ErrUndefined
 	case !jtypes.IsArray(v):
 		if v.CanInterface() {
-			return []interface{}{v.Interface()}, nil
+			return []any{v.Interface()}, nil
 		}
 	case swap.Callable != nil:
 		return sortArrayFunc(v, swap.Callable)
@@ -141,9 +141,9 @@ func Sort(v reflect.Value, swap jtypes.OptionalCallable) (interface{}, error) {
 	return nil, fmt.Errorf("argument 1 of function sort must be an array of strings or numbers")
 }
 
-func sortNumberArray(v reflect.Value) []interface{} {
+func sortNumberArray(v reflect.Value) []any {
 	size := v.Len()
-	results := make([]interface{}, 0, size)
+	results := make([]any, 0, size)
 
 	for i := range size {
 		if n, ok := jtypes.AsNumber(v.Index(i)); ok {
@@ -158,9 +158,9 @@ func sortNumberArray(v reflect.Value) []interface{} {
 	return results
 }
 
-func sortStringArray(v reflect.Value) []interface{} {
+func sortStringArray(v reflect.Value) []any {
 	size := v.Len()
-	results := make([]interface{}, 0, size)
+	results := make([]any, 0, size)
 
 	for i := range size {
 		if s, ok := jtypes.AsString(v.Index(i)); ok {
@@ -175,9 +175,9 @@ func sortStringArray(v reflect.Value) []interface{} {
 	return results
 }
 
-func sortArrayFunc(v reflect.Value, fn jtypes.Callable) (interface{}, error) {
+func sortArrayFunc(v reflect.Value, fn jtypes.Callable) (any, error) {
 	size := v.Len()
-	results := make([]interface{}, 0, size)
+	results := make([]any, 0, size)
 
 	for i := range size {
 		if item := v.Index(i); item.CanInterface() {
@@ -185,7 +185,7 @@ func sortArrayFunc(v reflect.Value, fn jtypes.Callable) (interface{}, error) {
 		}
 	}
 
-	swapFunc := func(lhs, rhs interface{}) (bool, error) {
+	swapFunc := func(lhs, rhs any) (bool, error) {
 
 		args := []reflect.Value{
 			reflect.ValueOf(lhs),
@@ -208,7 +208,7 @@ func sortArrayFunc(v reflect.Value, fn jtypes.Callable) (interface{}, error) {
 	return mergeSort(results, swapFunc)
 }
 
-func mergeSort(values []interface{}, swapFunc func(interface{}, interface{}) (bool, error)) ([]interface{}, error) {
+func mergeSort(values []any, swapFunc func(any, any) (bool, error)) ([]any, error) {
 	n := len(values)
 	if n < 2 {
 		return values, nil
@@ -227,8 +227,8 @@ func mergeSort(values []interface{}, swapFunc func(interface{}, interface{}) (bo
 	return merge(lhs, rhs, swapFunc)
 }
 
-func merge(lhs, rhs []interface{}, swapFunc func(interface{}, interface{}) (bool, error)) ([]interface{}, error) {
-	results := make([]interface{}, len(lhs)+len(rhs))
+func merge(lhs, rhs []any, swapFunc func(any, any) (bool, error)) ([]any, error) {
+	results := make([]any, len(lhs)+len(rhs))
 
 	for i := range results {
 
@@ -260,11 +260,11 @@ func merge(lhs, rhs []interface{}, swapFunc func(interface{}, interface{}) (bool
 }
 
 // Shuffle (golint)
-func Shuffle(v reflect.Value) interface{} {
+func Shuffle(v reflect.Value) any {
 	v = forceArray(jtypes.Resolve(v))
 
 	length := arrayLen(v)
-	results := make([]interface{}, length)
+	results := make([]any, length)
 
 	for i := range length {
 
@@ -284,7 +284,7 @@ func Shuffle(v reflect.Value) interface{} {
 }
 
 // Zip (golint)
-func Zip(vs ...reflect.Value) (interface{}, error) {
+func Zip(vs ...reflect.Value) (any, error) {
 	var size int
 
 	if len(vs) == 0 {
@@ -295,7 +295,7 @@ func Zip(vs ...reflect.Value) (interface{}, error) {
 
 		vs[i] = forceArray(jtypes.Resolve(vs[i]))
 		if !vs[i].IsValid() {
-			return []interface{}{}, nil
+			return []any{}, nil
 		}
 
 		if i == 0 || arrayLen(vs[i]) < size {
@@ -303,11 +303,11 @@ func Zip(vs ...reflect.Value) (interface{}, error) {
 		}
 	}
 
-	result := make([]interface{}, size)
+	result := make([]any, size)
 
 	for i := 0; i < size; i++ {
 
-		inner := make([]interface{}, len(vs))
+		inner := make([]any, len(vs))
 
 		for j := range vs {
 			v := vs[j].Index(i)

@@ -82,9 +82,9 @@ type EvalError struct {
 	Value string
 }
 
-func newEvalError(typ ErrType, token interface{}, value interface{}) *EvalError {
+func newEvalError(typ ErrType, token any, value any) *EvalError {
 
-	stringify := func(v interface{}) string {
+	stringify := func(v any) string {
 		switch v := v.(type) {
 		case string:
 			return v
