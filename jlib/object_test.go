@@ -17,9 +17,9 @@ import (
 )
 
 type eachTest struct {
-	Input    interface{}
+	Input    any
 	Callable jtypes.Callable
-	Output   interface{}
+	Output   any
 	Error    error
 }
 
@@ -63,7 +63,7 @@ func TestEach(t *testing.T) {
 	testEach(t, []eachTest{
 		{
 			// Empty map.
-			Input:    map[string]interface{}{},
+			Input:    map[string]any{},
 			Callable: paramCountCallable(1),
 			Error:    jtypes.ErrUndefined,
 		},
@@ -83,7 +83,7 @@ func TestEach(t *testing.T) {
 		},
 		{
 			// Callable with 1 argument.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 5,
 			},
 			Callable: repeatDots,
@@ -99,7 +99,7 @@ func TestEach(t *testing.T) {
 			Output:   ".....",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
@@ -107,7 +107,7 @@ func TestEach(t *testing.T) {
 				"e": 5,
 			},
 			Callable: repeatDots,
-			Output: []interface{}{
+			Output: []any{
 				".",
 				"..",
 				"...",
@@ -126,7 +126,7 @@ func TestEach(t *testing.T) {
 				e: 5, // unexported struct fields are ignored.
 			},
 			Callable: repeatDots,
-			Output: []interface{}{
+			Output: []any{
 				".",
 				"..",
 				"...",
@@ -135,7 +135,7 @@ func TestEach(t *testing.T) {
 		},
 		{
 			// Callable with 2 arguments.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 5,
 			},
 			Callable: repeatString,
@@ -151,7 +151,7 @@ func TestEach(t *testing.T) {
 			Output:   "AAAAA",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
@@ -159,7 +159,7 @@ func TestEach(t *testing.T) {
 				"e": 5,
 			},
 			Callable: repeatString,
-			Output: []interface{}{
+			Output: []any{
 				"a",
 				"bb",
 				"ccc",
@@ -178,7 +178,7 @@ func TestEach(t *testing.T) {
 				e: 5, // unexported struct fields are ignored.
 			},
 			Callable: repeatString,
-			Output: []interface{}{
+			Output: []any{
 				"A",
 				"BB",
 				"CCC",
@@ -187,7 +187,7 @@ func TestEach(t *testing.T) {
 		},
 		{
 			// Callable with 3 arguments.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 5,
 			},
 			Callable: printLen,
@@ -203,7 +203,7 @@ func TestEach(t *testing.T) {
 			Output:   "1",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
@@ -211,7 +211,7 @@ func TestEach(t *testing.T) {
 				"e": 5,
 			},
 			Callable: printLen,
-			Output: []interface{}{
+			Output: []any{
 				"5",
 				"5",
 				"5",
@@ -230,7 +230,7 @@ func TestEach(t *testing.T) {
 				e: 5, // unexported struct fields are ignored.
 			},
 			Callable: printLen,
-			Output: []interface{}{
+			Output: []any{
 				"5",
 				"5",
 				"5",
@@ -246,7 +246,7 @@ func TestEach(t *testing.T) {
 		},
 		{
 			// Callable has too few parameters.
-			Input:    map[string]interface{}{},
+			Input:    map[string]any{},
 			Callable: paramCountCallable(0),
 			Error:    fmt.Errorf("function must take 1, 2 or 3 arguments"),
 		},
@@ -258,7 +258,7 @@ func TestEach(t *testing.T) {
 		},
 		{
 			// If the Callable returns an error, return the error.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 			},
 			Callable: paramCountCallable(1),
@@ -292,9 +292,9 @@ func testEach(t *testing.T, tests []eachTest) {
 }
 
 type siftTest struct {
-	Input    interface{}
+	Input    any
 	Callable jtypes.Callable
-	Output   interface{}
+	Output   any
 	Error    error
 }
 
@@ -334,7 +334,7 @@ func TestSift(t *testing.T) {
 	testSift(t, []siftTest{
 		{
 			// Empty map.
-			Input:    map[string]interface{}{},
+			Input:    map[string]any{},
 			Callable: paramCountCallable(1),
 			Error:    jtypes.ErrUndefined,
 		},
@@ -354,14 +354,14 @@ func TestSift(t *testing.T) {
 		},
 		{
 			// Callable with 1 argument.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
 				"d": 4,
 			},
 			Callable: valueIsOdd,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": 1,
 				"c": 3,
 			},
@@ -376,19 +376,19 @@ func TestSift(t *testing.T) {
 				d: 1, // unexported struct fields are ignored.
 			},
 			Callable: valueIsOdd,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"A": 5,
 			},
 		},
 		{
 			// Callable with 2 arguments.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": "b",
 				"c": true,
 			},
 			Callable: valuesAreEqual,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"b": "b",
 			},
 		},
@@ -403,19 +403,19 @@ func TestSift(t *testing.T) {
 				c: "c",
 			},
 			Callable: valuesAreEqual,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"B": "B",
 			},
 		},
 		{
 			// Callable with 3 arguments.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
 			},
 			Callable: valueIsLen,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"c": 3,
 			},
 		},
@@ -429,7 +429,7 @@ func TestSift(t *testing.T) {
 				d: 4, // unexported struct fields are ignored.
 			},
 			Callable: valueIsLen,
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"A": 4,
 			},
 		},
@@ -450,7 +450,7 @@ func TestSift(t *testing.T) {
 		},
 		{
 			// Callable has too few parameters.
-			Input:    map[string]interface{}{},
+			Input:    map[string]any{},
 			Callable: paramCountCallable(0),
 			Error:    fmt.Errorf("function must take 1, 2 or 3 arguments"),
 		},
@@ -462,7 +462,7 @@ func TestSift(t *testing.T) {
 		},
 		{
 			// If the Callable returns an error, return the error.
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 			},
 			Callable: paramCountCallable(1),
@@ -496,8 +496,8 @@ func testSift(t *testing.T, tests []siftTest) {
 }
 
 type keysTest struct {
-	Input  interface{}
-	Output interface{}
+	Input  any
+	Output any
 	Error  error
 }
 
@@ -505,7 +505,7 @@ func TestKeys(t *testing.T) {
 	testKeys(t, []keysTest{
 		{
 			// Empty map.
-			Input: map[string]interface{}{},
+			Input: map[string]any{},
 			Error: jtypes.ErrUndefined,
 		},
 		{
@@ -522,11 +522,11 @@ func TestKeys(t *testing.T) {
 		},
 		{
 			// Empty array.
-			Input: []interface{}{},
+			Input: []any{},
 			Error: jtypes.ErrUndefined,
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 			},
 			Output: "a",
@@ -544,7 +544,7 @@ func TestKeys(t *testing.T) {
 			Output: "A",
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
@@ -581,13 +581,13 @@ func TestKeys(t *testing.T) {
 			},
 		},
 		{
-			Input: []interface{}{
-				map[string]interface{}{
+			Input: []any{
+				map[string]any{
 					"a": 1,
 					"b": 2,
 					"c": 3,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"a": 1,
 					"b": 2,
 					"c": 3,
@@ -610,7 +610,7 @@ func TestKeys(t *testing.T) {
 			Error: jtypes.ErrUndefined,
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				3.141592,
 			},
 			Error: jtypes.ErrUndefined,
@@ -622,7 +622,7 @@ func TestKeys(t *testing.T) {
 			Error: fmt.Errorf("object key must evaluate to a string, got true (bool)"),
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				map[bool]string{
 					false: "false",
 				},
@@ -649,8 +649,8 @@ func testKeys(t *testing.T, tests []keysTest) {
 }
 
 type mergeTest struct {
-	Input  interface{}
-	Output interface{}
+	Input  any
+	Output any
 	Error  error
 }
 
@@ -658,31 +658,31 @@ func TestMerge(t *testing.T) {
 	testMerge(t, []mergeTest{
 		{
 			// Empty map.
-			Input:  map[string]interface{}{},
-			Output: map[string]interface{}{},
+			Input:  map[string]any{},
+			Output: map[string]any{},
 		},
 		{
 			// Empty struct.
 			Input:  struct{}{},
-			Output: map[string]interface{}{},
+			Output: map[string]any{},
 		},
 		{
 			// Struct with no exported fields.
 			Input: struct {
 				a, b, c int
 			}{},
-			Output: map[string]interface{}{},
+			Output: map[string]any{},
 		},
 		{
 			// Empty array.
-			Input:  []interface{}{},
-			Output: map[string]interface{}{},
+			Input:  []any{},
+			Output: map[string]any{},
 		},
 		{
-			Input: map[string]interface{}{
+			Input: map[string]any{
 				"a": 1,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": 1,
 			},
 		},
@@ -692,12 +692,12 @@ func TestMerge(t *testing.T) {
 			}{
 				Pi: 3.141592,
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"Pi": 3.141592,
 			},
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				map[string]int{
 					"a": 1,
 					"c": 3,
@@ -711,7 +711,7 @@ func TestMerge(t *testing.T) {
 					"h": 8,
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"a": 1,
 				"b": 2,
 				"c": 3,
@@ -736,19 +736,19 @@ func TestMerge(t *testing.T) {
 					C: 3,
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"A": 0,
 				"B": 0,
 				"C": 3,
 			},
 		},
 		{
-			Input: []interface{}{
-				map[string]interface{}{
+			Input: []any{
+				map[string]any{
 					"One": 1,
 					"Two": 2,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Three": 3,
 				},
 				struct {
@@ -763,7 +763,7 @@ func TestMerge(t *testing.T) {
 					"Five": 5.0,
 				},
 			},
-			Output: map[string]interface{}{
+			Output: map[string]any{
 				"One":   1,
 				"Two":   2,
 				"Three": "three",
@@ -776,7 +776,7 @@ func TestMerge(t *testing.T) {
 			Error: fmt.Errorf("argument must be an object or an array of objects"),
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				3.141592,
 			},
 			Error: fmt.Errorf("argument must be an object or an array of objects"),
@@ -788,7 +788,7 @@ func TestMerge(t *testing.T) {
 			Error: fmt.Errorf("object key must evaluate to a string, got true (bool)"),
 		},
 		{
-			Input: []interface{}{
+			Input: []any{
 				map[bool]string{
 					false: "false",
 				},
@@ -866,7 +866,7 @@ func (f callable3) Call(argv []reflect.Value) (reflect.Value, error) {
 	return f(argv)
 }
 
-func equalStringArray(v1, v2 interface{}) bool {
+func equalStringArray(v1, v2 any) bool {
 	switch v1 := v1.(type) {
 	case nil:
 		return v2 == nil
@@ -876,8 +876,8 @@ func equalStringArray(v1, v2 interface{}) bool {
 	case []string:
 		v2, ok := v2.([]string)
 		return ok && reflect.DeepEqual(stringArrayCount(v1), stringArrayCount(v2))
-	case []interface{}:
-		v2, ok := v2.([]interface{})
+	case []any:
+		v2, ok := v2.([]any)
 		return ok && reflect.DeepEqual(interfaceArrayCount(v1), interfaceArrayCount(v2))
 	default:
 		return false
@@ -895,11 +895,11 @@ func stringArrayCount(values []string) map[string]int {
 	return m
 }
 
-func interfaceArrayCount(values []interface{}) map[interface{}]int {
-	var m map[interface{}]int
+func interfaceArrayCount(values []any) map[any]int {
+	var m map[any]int
 	for _, v := range values {
 		if m == nil {
-			m = make(map[interface{}]int)
+			m = make(map[any]int)
 		}
 		m[v]++
 	}

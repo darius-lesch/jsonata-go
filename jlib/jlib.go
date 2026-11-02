@@ -40,7 +40,7 @@ func (StringCallable) ValidTypes() []reflect.Type {
 	}
 }
 
-func (s StringCallable) toInterface() interface{} {
+func (s StringCallable) toInterface() any {
 	if v := reflect.Value(s); v.IsValid() && v.CanInterface() {
 		return v.Interface()
 	}
@@ -49,7 +49,7 @@ func (s StringCallable) toInterface() interface{} {
 
 // TypeOf implements the jsonata $type function that returns the data type of
 // the argument
-func TypeOf(x interface{}) (string, error) {
+func TypeOf(x any) (string, error) {
 	v := reflect.ValueOf(x)
 	if jtypes.IsCallable(v) {
 		return "function", nil
@@ -71,7 +71,7 @@ func TypeOf(x interface{}) (string, error) {
 	}
 
 	switch x.(type) {
-	case *interface{}:
+	case *any:
 		return "null", nil
 	}
 

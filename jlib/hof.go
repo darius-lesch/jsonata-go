@@ -12,11 +12,11 @@ import (
 )
 
 // Map (golint)
-func Map(v reflect.Value, f jtypes.Callable) (interface{}, error) {
+func Map(v reflect.Value, f jtypes.Callable) (any, error) {
 
 	v = forceArray(jtypes.Resolve(v))
 
-	var results []interface{}
+	var results []any
 
 	argc := clamp(f.ParamCount(), 1, 3)
 
@@ -37,11 +37,11 @@ func Map(v reflect.Value, f jtypes.Callable) (interface{}, error) {
 }
 
 // Filter (golint)
-func Filter(v reflect.Value, f jtypes.Callable) (interface{}, error) {
+func Filter(v reflect.Value, f jtypes.Callable) (any, error) {
 
 	v = forceArray(jtypes.Resolve(v))
 
-	var results []interface{}
+	var results []any
 
 	argc := clamp(f.ParamCount(), 1, 3)
 
@@ -63,7 +63,7 @@ func Filter(v reflect.Value, f jtypes.Callable) (interface{}, error) {
 }
 
 // Reduce (golint)
-func Reduce(v reflect.Value, f jtypes.Callable, init jtypes.OptionalValue) (interface{}, error) {
+func Reduce(v reflect.Value, f jtypes.Callable, init jtypes.OptionalValue) (any, error) {
 
 	v = forceArray(jtypes.Resolve(v))
 
@@ -102,7 +102,7 @@ func Reduce(v reflect.Value, f jtypes.Callable, init jtypes.OptionalValue) (inte
 // value). Returns an error if the number of matching values is not exactly
 // one.
 // https://docs.jsonata.org/higher-order-functions#single
-func Single(v reflect.Value, f jtypes.Callable) (interface{}, error) {
+func Single(v reflect.Value, f jtypes.Callable) (any, error) {
 	filteredValue, err := Filter(v, f)
 	if err != nil {
 		return nil, err
