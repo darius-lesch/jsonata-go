@@ -5,13 +5,12 @@
 package jsonata
 
 import (
-	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"regexp"
 
-	"github.com/darius-lesch/jsonata-go/v2/jlib"
 	"github.com/darius-lesch/jsonata-go/v2/jparse"
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
@@ -32,6 +31,10 @@ type callableMarshaler struct{}
 
 func (callableMarshaler) MarshalJSON() ([]byte, error) {
 	return []byte(`""`), nil
+}
+
+func (callableMarshaler) MarshalJSONTo(enc *jsontext.Encoder) error {
+	return enc.WriteToken(jsontext.String(""))
 }
 
 type goCallableParam struct {
@@ -770,20 +773,27 @@ func (f *transformationCallable) deleteEntries(item reflect.Value) error {
 	return nil
 }
 
+var cloneMarshalOpts = jsonv2.WithMarshalers(jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, _ jtypes.Callable) error {
+	return enc.WriteToken(jsontext.String(""))
+}))
+
 func (f *transformationCallable) clone(v reflect.Value) (reflect.Value, error) {
 
 	if v == undefined {
 		return undefined, nil
 	}
 
-	s, err := jlib.String(v.Interface())
+	if jtypes.IsCallable(v) {
+		return undefined, newEvalError(ErrClone, nil, nil)
+	}
+
+	b, err := jsonv2.Marshal(v.Interface(), cloneMarshalOpts)
 	if err != nil {
 		return undefined, err
 	}
 
 	var dest any
-	// Direct unmarshal replaces the legacy json.NewDecoder pattern
-	if err = jsonv2.Unmarshal([]byte(s), &dest, jsonv1.DefaultOptionsV1()); err != nil {
+	if err = jsonv2.Unmarshal(b, &dest); err != nil {
 		return undefined, err
 	}
 

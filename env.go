@@ -467,6 +467,7 @@ func assertFunc(condition bool, msg ...string) (interface{}, error) {
 }
 
 type evalCallable struct {
+	callableMarshaler
 	ctx reflect.Value
 }
 

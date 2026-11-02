@@ -35,7 +35,6 @@ go get github.com/darius-lesch/jsonata-go/v2
 package main
 
 import (
-	jsonv1 "encoding/json"
 	jsonv2 "encoding/json/v2"
 	"fmt"
 	"log"
@@ -57,7 +56,7 @@ func main() {
 	var data any
 
 	// Decode JSON
-	if err := jsonv2.Unmarshal([]byte(jsonString), &data, jsonv1.DefaultOptionsV1()); err != nil {
+	if err := jsonv2.Unmarshal([]byte(jsonString), &data); err != nil {
 		log.Fatal(err)
 	}
 

@@ -5,11 +5,9 @@
 package main
 
 import (
+	jsonv2 "encoding/json/v2"
 	"log"
 	"net/http"
-
-	jsonv1 "encoding/json"
-	jsonv2 "encoding/json/v2"
 
 	jsonata "github.com/darius-lesch/jsonata-go/v2"
 )
@@ -78,7 +76,7 @@ var (
 var data any
 
 func init() {
-	if err := jsonv2.Unmarshal(benchData, &data, jsonv1.DefaultOptionsV1()); err != nil {
+	if err := jsonv2.Unmarshal(benchData, &data); err != nil {
 		panic(err)
 	}
 }

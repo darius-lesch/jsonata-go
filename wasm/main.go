@@ -3,7 +3,6 @@
 package main
 
 import (
-	jsonv1 "encoding/json"
 	jsonv2 "encoding/json/v2"
 	"fmt"
 	"sync"
@@ -54,7 +53,7 @@ func doEval(exprStr, jsonStr string) (result string, err error) {
 
 	var data any
 	if jsonStr != "" {
-		if unmarshalErr := jsonv2.Unmarshal([]byte(jsonStr), &data, jsonv1.DefaultOptionsV1()); unmarshalErr != nil {
+		if unmarshalErr := jsonv2.Unmarshal([]byte(jsonStr), &data); unmarshalErr != nil {
 			return "", fmt.Errorf("invalid JSON data: %w", unmarshalErr)
 		}
 	}
@@ -69,7 +68,7 @@ func doEval(exprStr, jsonStr string) (result string, err error) {
 		return "", nil
 	}
 
-	out, marshalErr := jsonv2.Marshal(res, jsonv1.DefaultOptionsV1())
+	out, marshalErr := jsonv2.Marshal(res, jsonv2.Deterministic(true))
 	if marshalErr != nil {
 		return "", fmt.Errorf("cannot marshal result: %w", marshalErr)
 	}

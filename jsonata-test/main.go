@@ -1,7 +1,7 @@
 package main
 
 import (
-	jsonv1 "encoding/json"
+	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
@@ -17,20 +17,20 @@ import (
 )
 
 type testCase struct {
-	Expr        string
-	ExprFile    string `json:"expr-file"`
-	Category    string
-	Data        any
-	Dataset     string
-	Description string
-	TimeLimit   int
-	Depth       int
-	Bindings    map[string]any
-	Result      any
-	Undefined   bool
-	Error       string `json:"code"`
-	Token       string
-	Unordered   bool
+	Expr        string         `json:"expr"`
+	ExprFile    string         `json:"expr-file"`
+	Category    string         `json:"category"`
+	Data        any            `json:"data"`
+	Dataset     string         `json:"dataset"`
+	Description string         `json:"description"`
+	TimeLimit   int            `json:"timelimit"`
+	Depth       int            `json:"depth"`
+	Bindings    map[string]any `json:"bindings"`
+	Result      any            `json:"result"`
+	Undefined   bool           `json:"undefined"`
+	Error       string         `json:"code"`
+	Token       string         `json:"token"`
+	Unordered   bool           `json:"unordered"`
 }
 
 func main() {
@@ -329,7 +329,7 @@ func readJSONFile(path string, dest any) error {
 		return fmt.Errorf("ReadFile %s: %s", path, err)
 	}
 
-	err = jsonv2.Unmarshal(b, dest, jsonv1.DefaultOptionsV1())
+	err = jsonv2.Unmarshal(b, dest, jsontext.AllowDuplicateNames(true), jsontext.AllowInvalidUTF8(true))
 	if err != nil {
 		return fmt.Errorf("unmarshal %s: %s", path, err)
 	}
