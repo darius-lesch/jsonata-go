@@ -221,13 +221,13 @@ func loadTestCases(path string) ([]testCase, error) {
 
 		// If any of the tests specify an expression file, load it from
 		// disk and add it to the test case
-		for _, testCase := range tcs {
-			if testCase.ExprFile != "" {
-				expr, err := loadTestExprFile(path, testCase.ExprFile)
+		for i := range tcs {
+			if tcs[i].ExprFile != "" {
+				expr, err := loadTestExprFile(path, tcs[i].ExprFile)
 				if err != nil {
 					return nil, err
 				}
-				testCase.Expr = expr
+				tcs[i].Expr = expr
 			}
 		}
 		return tcs, nil

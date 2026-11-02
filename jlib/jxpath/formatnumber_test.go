@@ -74,6 +74,26 @@ func TestExamples(t *testing.T) {
 			Picture: ".00e0",
 			Output:  ".23e0",
 		},
+		{
+			Value:   0,
+			Picture: "0.0e0",
+			Output:  "0.0e0",
+		},
+		{
+			Value:   0,
+			Picture: "00.000e0",
+			Output:  "00.000e0",
+		},
+		{
+			Value:   -1234.5678,
+			Picture: "00.000e0",
+			Output:  "-12.346e2",
+		},
+		{
+			Value:   -0.234,
+			Picture: "0.0e0",
+			Output:  "-2.3e-1",
+		},
 	}
 
 	testFormatNumber(t, tests)

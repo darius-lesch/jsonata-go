@@ -5845,6 +5845,14 @@ func TestFormatNumber(t *testing.T) {
 			Output:     ".23e0",
 		},
 		{
+			Expression: `$formatNumber(0, "0.0e0")`,
+			Output:     "0.0e0",
+		},
+		{
+			Expression: `$formatNumber(-1234.5678, "00.000e0")`,
+			Output:     "-12.346e2",
+		},
+		{
 			Expression: `$formatNumber(2392.14*(-36.58), "000,000.000###;###,###.000###")`,
 			Output:     "87,504.4812",
 		},
