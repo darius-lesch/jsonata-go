@@ -131,7 +131,7 @@ Navigate to `http://localhost:8080` in your browser.
 
 ### 2. Upstream Test Suite Runner (`jsonata-test`)
 
-A CLI utility used to run `jsonata-go` directly against the official [`jsonata-js` test-suite](https://www.google.com/search?q=https://github.com/jsonata-js/jsonata/tree/master/test/test-suite)[cite: 16].
+A CLI utility used to run `jsonata-go` directly against the official [`jsonata-js` test-suite](https://www.google.com/search?q=https://github.com/jsonata-js/jsonata/tree/master/test/test-suite).
 
 #### Installation & Execution
 
