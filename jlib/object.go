@@ -125,7 +125,7 @@ func eachStruct(v reflect.Value, fn jtypes.Callable) ([]interface{}, error) {
 	t := v.Type()
 	argv := make([]reflect.Value, fn.ParamCount())
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 
 		field := t.Field(i)
 		if field.PkgPath != "" {
@@ -267,7 +267,7 @@ func siftStruct(v reflect.Value, fn jtypes.Callable) (map[string]interface{}, er
 	t := v.Type()
 	argv := make([]reflect.Value, fn.ParamCount())
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 
 		key := t.Field(i).Name
 		val := v.Field(i)
@@ -393,7 +393,7 @@ func keysStruct(v reflect.Value) ([]string, error) {
 	var results []string
 
 	t := v.Type()
-	for i := 0; i < size; i++ {
+	for i := range size {
 
 		field := t.Field(i)
 		if field.PkgPath != "" {

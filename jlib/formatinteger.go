@@ -102,17 +102,17 @@ func formatRoman(n int64, upper bool) string {
 	}
 	vals := []int64{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
 	syms := []string{"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"}
-	res := ""
+	var res strings.Builder
 	for i, v := range vals {
 		for n >= v {
-			res += syms[i]
+			res.WriteString(syms[i])
 			n -= v
 		}
 	}
 	if !upper {
-		return strings.ToLower(res)
+		return strings.ToLower(res.String())
 	}
-	return res
+	return res.String()
 }
 
 func titleCaseWords(s string) string {
@@ -205,11 +205,11 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 
 	// Map to target unicode zero
 	if zeroRune != '0' {
-		mapped := ""
+		var mapped strings.Builder
 		for _, r := range strN {
-			mapped += string(zeroRune + (r - '0'))
+			mapped.WriteString(string(zeroRune + (r - '0')))
 		}
-		strN = mapped
+		strN = mapped.String()
 	}
 
 	// Apply grouping

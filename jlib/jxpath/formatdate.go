@@ -905,7 +905,7 @@ func countDigits(s string) int {
 
 func pow10(n int) int {
 	val := 1
-	for i := 0; i < n; i++ {
+	for range n {
 		val *= 10
 	}
 	return val

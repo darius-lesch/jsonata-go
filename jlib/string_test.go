@@ -17,9 +17,9 @@ import (
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
-var typereplaceCallable = reflect.TypeOf((*replaceCallable)(nil)).Elem()
-var typeMatchCallable = reflect.TypeOf((*matchCallable)(nil)).Elem()
-var typeCallable = reflect.TypeOf((*jtypes.Callable)(nil)).Elem()
+var typereplaceCallable = reflect.TypeFor[replaceCallable]()
+var typeMatchCallable = reflect.TypeFor[matchCallable]()
+var typeCallable = reflect.TypeFor[jtypes.Callable]()
 
 func TestMain(m *testing.M) {
 

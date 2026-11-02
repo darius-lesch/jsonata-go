@@ -369,7 +369,7 @@ func testLexer(t *testing.T, data []lexerTestCase) {
 
 		// The lexer should keep returning EOF after exhausting the input,
 		// UNLESS the lexer halted on an error, in which case it returns typeError.
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			if test.Error != nil {
 				got := l.next(test.AllowRegex)
 				if got.Type != typeError {

@@ -14,23 +14,23 @@ import (
 var undefined reflect.Value
 
 var (
-	typeBool    = reflect.TypeOf((*bool)(nil)).Elem()
-	typeInt     = reflect.TypeOf((*int)(nil)).Elem()
-	typeFloat64 = reflect.TypeOf((*float64)(nil)).Elem()
-	typeString  = reflect.TypeOf((*string)(nil)).Elem()
+	typeBool    = reflect.TypeFor[bool]()
+	typeInt     = reflect.TypeFor[int]()
+	typeFloat64 = reflect.TypeFor[float64]()
+	typeString  = reflect.TypeFor[string]()
 
 	// TypeOptional (golint)
-	TypeOptional = reflect.TypeOf((*Optional)(nil)).Elem()
+	TypeOptional = reflect.TypeFor[Optional]()
 	// TypeCallable (golint)
-	TypeCallable = reflect.TypeOf((*Callable)(nil)).Elem()
+	TypeCallable = reflect.TypeFor[Callable]()
 	// TypeConvertible (golint)
-	TypeConvertible = reflect.TypeOf((*Convertible)(nil)).Elem()
+	TypeConvertible = reflect.TypeFor[Convertible]()
 	// TypeVariant (golint)
-	TypeVariant = reflect.TypeOf((*Variant)(nil)).Elem()
+	TypeVariant = reflect.TypeFor[Variant]()
 	// TypeValue (golint)
-	TypeValue = reflect.TypeOf((*reflect.Value)(nil)).Elem()
+	TypeValue = reflect.TypeFor[reflect.Value]()
 	// TypeInterface (golint)
-	TypeInterface = reflect.TypeOf((*any)(nil)).Elem()
+	TypeInterface = reflect.TypeFor[any]()
 )
 
 // ErrUndefined (golint)
