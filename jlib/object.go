@@ -11,14 +11,14 @@ import (
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
-// typeInterfaceMap is the reflect.Type for map[string]interface{}.
+// typeInterfaceMap is the reflect.Type for map[string]any.
 // Go uses this type (by default) when decoding JSON objects.
 // JSONata objects also use this type. As such it is a common
 // map type in JSONata expressions.
 var typeInterfaceMap = reflect.MapOf(typeString, jtypes.TypeInterface)
 
 // toInterfaceMap attempts to cast a reflect.Value to a
-// map[string]interface{}. This is useful for performance
+// map[string]any. This is useful for performance
 // because direct map access is significantly faster than
 // the reflect functions MapKeys and MapIndex.
 func toInterfaceMap(v reflect.Value) (map[string]any, bool) {
@@ -610,7 +610,7 @@ func Spread(v reflect.Value) (any, error) {
 				return nil, err
 			}
 			switch res := res.(type) {
-			case []any: // Check for []interface{} first because it will also match interface{}.
+			case []any: // Check for []any first because it will also match any.
 				results = append(results, res...)
 			case any:
 				results = append(results, res)

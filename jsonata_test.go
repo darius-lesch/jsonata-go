@@ -2792,7 +2792,7 @@ func TestNullExpressions(t *testing.T) {
 			Output: []any{
 				nil,
 			},
-			Skip: true, // uses the wrong kind of nil (*interface{}(nil) instead of plain nil)?
+			Skip: true, // uses the wrong kind of nil (*any(nil) instead of plain nil)?
 		},
 		{
 			Expression: "[null, null]",
@@ -2800,7 +2800,7 @@ func TestNullExpressions(t *testing.T) {
 				nil,
 				nil,
 			},
-			Skip: true, // uses the wrong kind of nil (*interface{}(nil) instead of plain nil)?
+			Skip: true, // uses the wrong kind of nil (*any(nil) instead of plain nil)?
 		},
 		{
 			Expression: "$not(null)",
@@ -2821,7 +2821,7 @@ func TestNullExpressions(t *testing.T) {
 				"false": false,
 				"null":  nil,
 			},
-			Skip: true, // uses the wrong kind of nil (*interface{}(nil) instead of plain nil)?
+			Skip: true, // uses the wrong kind of nil (*any(nil) instead of plain nil)?
 		},
 	})
 }
@@ -4458,7 +4458,7 @@ func TestFuncSpread4(t *testing.T) {
 		Int        int
 		Bool       bool
 		String     string
-		Interface  interface{}
+		Interface  any
 		unexported bool
 	}{
 		{
@@ -4476,63 +4476,63 @@ func TestFuncSpread4(t *testing.T) {
 	runTestCases(t, data, []*testCase{
 		{
 			Expression: `$spread($[0])`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"Int": 1,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Bool": true,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"String": "string",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Interface": nil,
 				},
 			},
 		},
 		{
 			Expression: `$spread($[1])`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"Int": 0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Bool": false,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"String": "",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Interface": nil,
 				},
 			},
 		},
 		{
 			Expression: `$spread($)`,
-			Output: []interface{}{
-				map[string]interface{}{
+			Output: []any{
+				map[string]any{
 					"Int": 1,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Bool": true,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"String": "string",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Interface": nil,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Int": 0,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Bool": false,
 				},
-				map[string]interface{}{
+				map[string]any{
 					"String": "",
 				},
-				map[string]interface{}{
+				map[string]any{
 					"Interface": nil,
 				},
 			},
