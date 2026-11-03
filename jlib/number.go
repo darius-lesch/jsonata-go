@@ -16,7 +16,12 @@ import (
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
-var reNumber = regexp.MustCompile(`^-?(([0-9]+))(\.[0-9]+)?([Ee][-+]?[0-9]+)?$`)
+var (
+	reNumber = regexp.MustCompile(`^-?(([0-9]+))(\.[0-9]+)?([Ee][-+]?[0-9]+)?$`)
+	reHex    = regexp.MustCompile(`^0[xX][0-9A-Fa-f]+$`)
+	reOctal  = regexp.MustCompile(`^0[oO][0-7]+$`)
+	reBinary = regexp.MustCompile(`^0[bB][0-1]+$`)
+)
 
 // Number converts values to numbers. Numeric values are returned
 // unchanged. Strings in legal JSON number format are converted
@@ -36,9 +41,24 @@ func Number(value StringNumberBool) (float64, error) {
 	}
 
 	s, ok := jtypes.AsString(v)
-	if ok && reNumber.MatchString(s) {
-		if n, err := strconv.ParseFloat(s, 64); err == nil {
-			return n, nil
+	if ok {
+		switch {
+		case reNumber.MatchString(s):
+			if n, err := strconv.ParseFloat(s, 64); err == nil {
+				return n, nil
+			}
+		case reHex.MatchString(s):
+			if n, err := strconv.ParseInt(s[2:], 16, 64); err == nil {
+				return float64(n), nil
+			}
+		case reOctal.MatchString(s):
+			if n, err := strconv.ParseInt(s[2:], 8, 64); err == nil {
+				return float64(n), nil
+			}
+		case reBinary.MatchString(s):
+			if n, err := strconv.ParseInt(s[2:], 2, 64); err == nil {
+				return float64(n), nil
+			}
 		}
 	}
 

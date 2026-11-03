@@ -79,7 +79,7 @@ func IsMap(v reflect.Value) bool {
 
 // IsStruct (golint)
 func IsStruct(v reflect.Value) bool {
-	return resolvedKind(v) == reflect.Struct
+	return resolvedKind(v) == reflect.Struct && !IsCallable(v)
 }
 
 // AsBool (golint)
