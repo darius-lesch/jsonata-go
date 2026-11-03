@@ -1749,12 +1749,7 @@ func TestLambdaCallable(t *testing.T) {
 				"ringo",
 				"george",
 			},
-			Output: []any{
-				"john",
-				"paul",
-				"ringo",
-				"george",
-			},
+			Output: "john",
 		},
 		{
 			// Typed lambda, valid variadic argument.
@@ -1775,9 +1770,7 @@ func TestLambdaCallable(t *testing.T) {
 			Args: []any{
 				100,
 			},
-			Output: []any{
-				100,
-			},
+			Output: 100,
 		},
 		{
 			// Typed lambda, invalid variadic argument.

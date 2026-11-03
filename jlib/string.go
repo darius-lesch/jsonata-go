@@ -21,17 +21,38 @@ import (
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
 
-var stringMarshalOpts = jsonv2.JoinOptions(
-	jsonv2.Deterministic(true),
-	jsonv2.WithMarshalers(jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, _ jtypes.Callable) error {
+var stringMarshalers = jsonv2.JoinMarshalers(
+	jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, _ jtypes.Callable) error {
 		return enc.WriteToken(jsontext.String(""))
-	})),
+	}),
+	jsonv2.MarshalToFunc(func(enc *jsontext.Encoder, v float64) error {
+		if math.IsNaN(v) || math.IsInf(v, 0) {
+			return newError("string", ErrNaNInf)
+		}
+		if math.Trunc(v) != v {
+			s := fmt.Sprintf("%.15g", v)
+			v, _ = strconv.ParseFloat(s, 64)
+		}
+		return enc.WriteToken(jsontext.Float(v))
+	}),
+)
+
+var (
+	stringMarshalOpts = jsonv2.JoinOptions(
+		jsonv2.Deterministic(true),
+		jsonv2.WithMarshalers(stringMarshalers),
+	)
+	stringPrettifyMarshalOpts = jsonv2.JoinOptions(
+		jsonv2.Deterministic(true),
+		jsontext.WithIndent("  "),
+		jsonv2.WithMarshalers(stringMarshalers),
+	)
 )
 
 // String converts a JSONata value to a string. Values that are
 // already strings are returned unchanged. Functions return empty
 // strings. All other types return their JSON representation.
-func String(value any) (string, error) {
+func String(value any, prettify jtypes.OptionalBool) (string, error) {
 
 	switch v := value.(type) {
 	case jtypes.Callable:
@@ -44,9 +65,12 @@ func String(value any) (string, error) {
 		if math.IsNaN(v) || math.IsInf(v, 0) {
 			return "", newError("string", ErrNaNInf)
 		}
-		// Fix IEEE-754 precision drift exclusively during string coercion
-		s := fmt.Sprintf("%.14g", v)
-		clean, _ := strconv.ParseFloat(s, 64)
+		clean := v
+		if math.Trunc(v) != v {
+			// Fix IEEE-754 precision drift exclusively during string coercion
+			s := fmt.Sprintf("%.15g", v)
+			clean, _ = strconv.ParseFloat(s, 64)
+		}
 
 		b, err := jsonv2.Marshal(clean)
 		if err != nil {
@@ -55,8 +79,12 @@ func String(value any) (string, error) {
 		return string(b), nil
 	}
 
-	// TODO: Round numbers to 13dps to match jsonata-js.
-	b, err := jsonv2.Marshal(value, stringMarshalOpts)
+	opts := stringMarshalOpts
+	if prettify.Bool {
+		opts = stringPrettifyMarshalOpts
+	}
+
+	b, err := jsonv2.Marshal(value, opts)
 	if err != nil {
 		return "", err
 	}
@@ -113,16 +141,21 @@ func SubstringAfter(s, substr string) string {
 	return s
 }
 
+const maxPadLength = 10000000
+
 // Pad returns a string padded to the specified number of characters.
 // If the width is greater than zero, the string is padded to the
 // right. If the width is less than zero, the string is padded to
 // the left. The optional third argument specifies the characters
 // used for padding. The default padding character is a space.
-func Pad(s string, width int, chars jtypes.OptionalString) string {
+func Pad(s string, width int, chars jtypes.OptionalString) (string, error) {
 
 	padlen := abs(width) - utf8.RuneCountInString(s)
 	if padlen <= 0 {
-		return s
+		return s, nil
+	}
+	if padlen > maxPadLength {
+		return "", fmt.Errorf("pad width %d exceeds maximum padding length", width)
 	}
 
 	ch := chars.String
@@ -137,10 +170,10 @@ func Pad(s string, width int, chars jtypes.OptionalString) string {
 	}
 
 	if width < 0 {
-		return padding + s
+		return padding + s, nil
 	}
 
-	return s + padding
+	return s + padding, nil
 }
 
 var reWhitespace = regexp.MustCompile(`\s+`)
@@ -160,7 +193,7 @@ func Contains(s string, pattern StringCallable) (bool, error) {
 	case string:
 		return strings.Contains(s, v), nil
 	case jtypes.Callable:
-		matches, err := extractMatches(v, s, -1)
+		matches, err := extractMatches(v, s, 1)
 		if err != nil {
 			return false, err
 		}
@@ -551,7 +584,7 @@ type match struct {
 
 func extractMatches(fn jtypes.Callable, s string, limit int) ([]match, error) {
 
-	matches, err := callMatchFunc(fn, []reflect.Value{reflect.ValueOf(s)}, nil)
+	matches, err := callMatchFunc(fn, []reflect.Value{reflect.ValueOf(s)}, nil, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +596,11 @@ func extractMatches(fn jtypes.Callable, s string, limit int) ([]match, error) {
 	return matches, nil
 }
 
-func callMatchFunc(fn jtypes.Callable, argv []reflect.Value, matches []match) ([]match, error) {
+func callMatchFunc(fn jtypes.Callable, argv []reflect.Value, matches []match, limit int) ([]match, error) {
+
+	if limit == 0 {
+		return matches, nil
+	}
 
 	res, err := fn.Call(argv)
 	if err != nil {
@@ -616,14 +653,24 @@ func callMatchFunc(fn jtypes.Callable, argv []reflect.Value, matches []match) ([
 		return nil, fmt.Errorf("match function must return an object with a Callable value named 'next'")
 	}
 
-	return callMatchFunc(next, nil, append(matches, match{
+	if len(matches) > 0 && value == "" {
+		return nil, fmt.Errorf("regular expression matches zero length string")
+	}
+
+	matches = append(matches, match{
 		value: value,
 		indexes: [2]int{
 			int(start),
 			int(end),
 		},
 		groups: groups,
-	}))
+	})
+
+	if limit > 0 && len(matches) >= limit {
+		return matches, nil
+	}
+
+	return callMatchFunc(next, nil, matches, limit)
 }
 
 func expandReplaceString(s string, m match) string {

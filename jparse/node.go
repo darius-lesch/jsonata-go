@@ -226,8 +226,10 @@ func (n NameNode) Escaped() bool {
 // A PathNode represents a JSON object path. It consists of one
 // or more 'steps' or Nodes (most commonly NameNode objects).
 type PathNode struct {
-	Steps      []Node
-	KeepArrays bool
+	Steps         []Node
+	KeepArrays    bool
+	Tuple         bool
+	SeekingParent []*AncestorSlot
 }
 
 func (n *PathNode) optimize() (Node, error) {
@@ -235,11 +237,17 @@ func (n *PathNode) optimize() (Node, error) {
 }
 
 func (n PathNode) String() string {
-	s := joinNodes(n.Steps, ".")
-	if n.KeepArrays {
-		s += "[]"
+	var b strings.Builder
+	for i, step := range n.Steps {
+		if i > 0 && !IsSortNode(step) {
+			b.WriteString(".")
+		}
+		b.WriteString(step.String())
 	}
-	return s
+	if n.KeepArrays {
+		b.WriteString("[]")
+	}
+	return b.String()
 }
 
 // A NegationNode represents a numeric negation operation.
@@ -1050,7 +1058,14 @@ func parseLambdaDefinition(p *parser, shorthand bool) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		if len(params) != len(paramNames) {
+		hasVariadic := false
+		for _, param := range params {
+			if param.Option == ParamVariadic {
+				hasVariadic = true
+				break
+			}
+		}
+		if (!hasVariadic && len(params) != len(paramNames)) || (hasVariadic && len(params) > len(paramNames)) {
 			return nil, newError(ErrParamCount, p.token)
 		}
 	}
@@ -1186,6 +1201,10 @@ func (n *GroupNode) optimize() (Node, error) {
 	n.Expr, err = n.Expr.optimize()
 	if err != nil {
 		return nil, err
+	}
+
+	if p, ok := n.Expr.(*PathNode); ok {
+		p.Tuple = true
 	}
 
 	if _, isGroup := n.Expr.(*GroupNode); isGroup {
@@ -1649,15 +1668,44 @@ func (n *SortNode) optimize() (Node, error) {
 
 	var err error
 
-	n.Expr, err = n.Expr.optimize()
-	if err != nil {
-		return nil, err
+	if n.Expr != nil {
+		n.Expr, err = n.Expr.optimize()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for i := range n.Terms {
 		n.Terms[i].Expr, err = n.Terms[i].Expr.optimize()
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	if n.Expr != nil {
+		if p, ok := n.Expr.(*PathNode); ok {
+			steps := make([]Node, 0, len(p.Steps)+1)
+			steps = append(steps, p.Steps...)
+			steps = append(steps, &SortNode{Terms: n.Terms})
+			path := &PathNode{
+				Steps:         steps,
+				KeepArrays:    p.KeepArrays,
+				Tuple:         p.Tuple,
+				SeekingParent: append([]*AncestorSlot(nil), p.SeekingParent...),
+			}
+			if err := resolveAncestry(path); err != nil {
+				return nil, err
+			}
+			return path, nil
+		}
+		if s, ok := n.Expr.(*StepNode); ok {
+			path := &PathNode{
+				Steps: []Node{s, &SortNode{Terms: n.Terms}},
+			}
+			if err := resolveAncestry(path); err != nil {
+				return nil, err
+			}
+			return path, nil
 		}
 	}
 
@@ -1682,7 +1730,10 @@ func (n SortNode) String() string {
 		terms[i] = sym + t.Expr.String()
 	}
 
-	return fmt.Sprintf("%s^(%s)", n.Expr, strings.Join(terms, ", "))
+	if n.Expr != nil {
+		return fmt.Sprintf("%s^(%s)", n.Expr, strings.Join(terms, ", "))
+	}
+	return fmt.Sprintf("^(%s)", strings.Join(terms, ", "))
 }
 
 // A FunctionApplicationNode represents a function application
@@ -1751,13 +1802,33 @@ func (n *dotNode) optimize() (Node, error) {
 			Type: ErrPathLiteral,
 			Hint: lhs.String(),
 		}
+	case *SortNode:
+		if p, ok := lhs.Expr.(*PathNode); ok {
+			path.Steps = append(path.Steps, p.Steps...)
+		} else {
+			path.Steps = append(path.Steps, lhs.Expr)
+		}
+		path.Steps = append(path.Steps, &SortNode{Terms: lhs.Terms})
 	case *PathNode:
 		path.Steps = lhs.Steps
 		if lhs.KeepArrays {
 			path.KeepArrays = true
 		}
+		if lhs.Tuple {
+			path.Tuple = true
+		}
+		path.SeekingParent = append(path.SeekingParent, lhs.SeekingParent...)
+	case *StepNode:
+		path.Steps = []Node{lhs}
+		if p, ok := lhs.Expr.(*ParentNode); ok && p.Slot != nil {
+			path.SeekingParent = append(path.SeekingParent, p.Slot)
+		}
+		path.SeekingParent = append(path.SeekingParent, lhs.SeekingParent...)
 	default:
 		path.Steps = []Node{lhs}
+		if p, ok := lhs.(*ParentNode); ok && p.Slot != nil {
+			path.SeekingParent = append(path.SeekingParent, p.Slot)
+		}
 	}
 
 	rhs, err := n.rhs.optimize()
@@ -1777,8 +1848,15 @@ func (n *dotNode) optimize() (Node, error) {
 		if rhs.KeepArrays {
 			path.KeepArrays = true
 		}
+		if rhs.Tuple {
+			path.Tuple = true
+		}
 	default:
 		path.Steps = append(path.Steps, rhs)
+	}
+
+	if err := resolveAncestry(path); err != nil {
+		return nil, err
 	}
 
 	return path, nil
@@ -1867,7 +1945,34 @@ func (n *predicateNode) optimize() (Node, error) {
 		}
 	case *PathNode:
 		i := len(lhs.Steps) - 1
+		rhsSlots := extractSeekingParents(rhs)
+		if len(rhsSlots) > 0 {
+			stepNode := ToStepNode(lhs.Steps[i])
+			lhs.Steps[i] = stepNode
+			for _, slot := range rhsSlots {
+				if slot.Level == 1 {
+					if _, err := seekParent(stepNode, slot); err != nil {
+						return nil, err
+					}
+				} else {
+					slot.Level--
+					stepNode.SeekingParent = append(stepNode.SeekingParent, slot)
+				}
+			}
+			stepNode.Stages = append(stepNode.Stages, Stage{
+				Type: StageFilter,
+				Expr: rhs,
+			})
+			stepNode.Tuple = true
+			return lhs, nil
+		}
+
 		switch last := lhs.Steps[i].(type) {
+		case *StepNode:
+			last.Stages = append(last.Stages, Stage{
+				Type: StageFilter,
+				Expr: rhs,
+			})
 		case *PredicateNode:
 			last.Filters = append(last.Filters, rhs)
 		default:
@@ -1879,6 +1984,30 @@ func (n *predicateNode) optimize() (Node, error) {
 		}
 		return lhs, nil
 	default:
+		rhsSlots := extractSeekingParents(rhs)
+		if len(rhsSlots) > 0 {
+			stepNode := ToStepNode(lhs)
+			for _, slot := range rhsSlots {
+				if slot.Level == 1 {
+					if _, err := seekParent(stepNode, slot); err != nil {
+						return nil, err
+					}
+				} else {
+					slot.Level--
+					stepNode.SeekingParent = append(stepNode.SeekingParent, slot)
+				}
+			}
+			stepNode.Stages = append(stepNode.Stages, Stage{
+				Type: StageFilter,
+				Expr: rhs,
+			})
+			stepNode.Tuple = true
+			p := &PathNode{
+				Steps: []Node{stepNode},
+			}
+			p.SeekingParent = append(p.SeekingParent, stepNode.SeekingParent...)
+			return p, nil
+		}
 		return &PredicateNode{
 			Expr:    lhs,
 			Filters: []Node{rhs},
@@ -2064,4 +2193,501 @@ func (n *CoalescingOperatorNode) optimize() (Node, error) {
 
 func (n CoalescingOperatorNode) String() string {
 	return fmt.Sprintf("%s ?? %s", n.LHS, n.RHS)
+}
+
+// An AncestorSlot represents a parent/ancestor reference level and label.
+type AncestorSlot struct {
+	Label string
+	Level int
+	Index int
+}
+
+// A ParentNode represents the parent operator (%).
+type ParentNode struct {
+	Slot     *AncestorSlot
+	Position int
+}
+
+func parseParent(p *parser, t token) (Node, error) {
+	return &ParentNode{
+		Slot:     p.newAncestorSlot(),
+		Position: t.Position,
+	}, nil
+}
+
+func (n *ParentNode) optimize() (Node, error) {
+	return n, nil
+}
+
+func (n ParentNode) String() string {
+	return "%"
+}
+
+// StageType represents whether a stage in a step is a filter or an index binding.
+type StageType int
+
+const (
+	StageFilter StageType = iota
+	StageIndex
+)
+
+// A Stage represents an individual filter or index binding in a step.
+type Stage struct {
+	Type StageType
+	Expr Node
+	Var  string
+}
+
+// A StepNode represents a step in a path that binds focus/index or participates in tuple streams.
+type StepNode struct {
+	Expr          Node
+	Focus         string
+	Index         string
+	Stages        []Stage
+	Ancestor      *AncestorSlot
+	Tuple         bool
+	KeepArray     bool
+	ConsArray     bool
+	SeekingParent []*AncestorSlot
+}
+
+func (n *StepNode) optimize() (Node, error) {
+	if n.Expr != nil {
+		var err error
+		n.Expr, err = n.Expr.optimize()
+		if err != nil {
+			return nil, err
+		}
+	}
+	for i := range n.Stages {
+		if n.Stages[i].Expr != nil {
+			var err error
+			n.Stages[i].Expr, err = n.Stages[i].Expr.optimize()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return n, nil
+}
+
+func (n StepNode) String() string {
+	s := ""
+	if n.Expr != nil {
+		s = n.Expr.String()
+	}
+	if n.Focus != "" {
+		s += "@$" + n.Focus
+	}
+	if n.Index != "" {
+		s += "#$" + n.Index
+	}
+	for _, st := range n.Stages {
+		switch st.Type {
+		case StageFilter:
+			s += fmt.Sprintf("[%s]", st.Expr)
+		case StageIndex:
+			s += "#$" + st.Var
+		}
+	}
+	if n.KeepArray {
+		s += "[]"
+	}
+	return s
+}
+
+func ToStepNode(n Node) *StepNode {
+	if s, ok := n.(*StepNode); ok {
+		return s
+	}
+	if p, ok := n.(*PredicateNode); ok {
+		stages := make([]Stage, len(p.Filters))
+		for i, f := range p.Filters {
+			stages[i] = Stage{Type: StageFilter, Expr: f}
+		}
+		return &StepNode{
+			Expr:   p.Expr,
+			Stages: stages,
+		}
+	}
+	return &StepNode{
+		Expr: n,
+	}
+}
+
+func IsSortNode(n Node) bool {
+	if s, ok := n.(*StepNode); ok {
+		n = s.Expr
+	}
+	_, ok := n.(*SortNode)
+	return ok
+}
+
+func isPredicate(n Node) bool {
+	if _, ok := n.(*PredicateNode); ok {
+		return true
+	}
+	if s, ok := n.(*StepNode); ok && len(s.Stages) > 0 {
+		return true
+	}
+	return false
+}
+
+type focusBindNode struct {
+	lhs Node
+	rhs Node
+	tok token
+}
+
+func parseFocusBind(p *parser, t token, lhs Node) (Node, error) {
+	rhs := p.parseExpression(p.bp(t.Type))
+	if _, ok := rhs.(*VariableNode); !ok {
+		return nil, newError(ErrIllegalContextVar, t)
+	}
+	return &focusBindNode{
+		lhs: lhs,
+		rhs: rhs,
+		tok: t,
+	}, nil
+}
+
+func (n *focusBindNode) optimize() (Node, error) {
+	lhs, err := n.lhs.optimize()
+	if err != nil {
+		return nil, err
+	}
+	rhs, err := n.rhs.optimize()
+	if err != nil {
+		return nil, err
+	}
+	v, ok := rhs.(*VariableNode)
+	if !ok {
+		return nil, newError(ErrIllegalContextVar, n.tok)
+	}
+
+	if p, ok := lhs.(*PathNode); ok {
+		if len(p.Steps) == 0 {
+			p.Steps = []Node{lhs}
+		}
+		lastIdx := len(p.Steps) - 1
+		lastStep := p.Steps[lastIdx]
+
+		if isPredicate(lastStep) {
+			return nil, newError(ErrContextAfterPredicate, n.tok)
+		}
+		if IsSortNode(lastStep) {
+			return nil, newError(ErrContextAfterSort, n.tok)
+		}
+
+		step := ToStepNode(lastStep)
+		if len(step.Stages) > 0 {
+			return nil, newError(ErrContextAfterPredicate, n.tok)
+		}
+		step.Focus = v.Name
+		step.Tuple = true
+		p.Steps[lastIdx] = step
+
+		return p, nil
+	}
+
+	if isPredicate(lhs) {
+		return nil, newError(ErrContextAfterPredicate, n.tok)
+	}
+	if IsSortNode(lhs) {
+		return nil, newError(ErrContextAfterSort, n.tok)
+	}
+
+	step := ToStepNode(lhs)
+	if len(step.Stages) > 0 {
+		return nil, newError(ErrContextAfterPredicate, n.tok)
+	}
+	step.Focus = v.Name
+	step.Tuple = true
+
+	return step, nil
+}
+
+func (n focusBindNode) String() string {
+	return fmt.Sprintf("%s@%s", n.lhs, n.rhs)
+}
+
+type indexBindNode struct {
+	lhs Node
+	rhs Node
+	tok token
+}
+
+func parseIndexBind(p *parser, t token, lhs Node) (Node, error) {
+	rhs := p.parseExpression(p.bp(t.Type))
+	if _, ok := rhs.(*VariableNode); !ok {
+		return nil, newError(ErrIllegalContextVar, t)
+	}
+	return &indexBindNode{
+		lhs: lhs,
+		rhs: rhs,
+		tok: t,
+	}, nil
+}
+
+func (n *indexBindNode) optimize() (Node, error) {
+	lhs, err := n.lhs.optimize()
+	if err != nil {
+		return nil, err
+	}
+	rhs, err := n.rhs.optimize()
+	if err != nil {
+		return nil, err
+	}
+	v, ok := rhs.(*VariableNode)
+	if !ok {
+		return nil, newError(ErrIllegalContextVar, n.tok)
+	}
+
+	if s, ok := lhs.(*SortNode); ok {
+		var steps []Node
+		if p, ok := s.Expr.(*PathNode); ok {
+			steps = append(steps, p.Steps...)
+		} else {
+			steps = append(steps, s.Expr)
+		}
+		steps = append(steps, &SortNode{Terms: s.Terms})
+		lhs = &PathNode{Steps: steps}
+	}
+
+	var path *PathNode
+	if p, ok := lhs.(*PathNode); ok {
+		path = p
+	} else {
+		path = &PathNode{Steps: []Node{lhs}}
+	}
+
+	if len(path.Steps) == 0 {
+		path.Steps = []Node{lhs}
+	}
+
+	lastIdx := len(path.Steps) - 1
+	step := ToStepNode(path.Steps[lastIdx])
+
+	if len(step.Stages) == 0 {
+		step.Index = v.Name
+	} else {
+		step.Stages = append(step.Stages, Stage{
+			Type: StageIndex,
+			Var:  v.Name,
+		})
+	}
+	step.Tuple = true
+	path.Steps[lastIdx] = step
+
+	return path, nil
+}
+
+func (n indexBindNode) String() string {
+	return fmt.Sprintf("%s#%s", n.lhs, n.rhs)
+}
+
+func extractSeekingParents(n Node) []*AncestorSlot {
+	var slots []*AncestorSlot
+	seen := make(map[*AncestorSlot]bool)
+	addSlot := func(slot *AncestorSlot) {
+		if slot != nil && slot.Level > 0 && !seen[slot] {
+			seen[slot] = true
+			slots = append(slots, slot)
+		}
+	}
+
+	var walk func(node Node)
+	walk = func(node Node) {
+		if node == nil {
+			return
+		}
+		switch n := node.(type) {
+		case *ParentNode:
+			addSlot(n.Slot)
+		case *PathNode:
+			for _, s := range n.SeekingParent {
+				addSlot(s)
+			}
+			for _, step := range n.Steps {
+				walk(step)
+			}
+		case *StepNode:
+			for _, s := range n.SeekingParent {
+				addSlot(s)
+			}
+			walk(n.Expr)
+			for _, stage := range n.Stages {
+				walk(stage.Expr)
+			}
+		case *BlockNode:
+			for _, expr := range n.Exprs {
+				walk(expr)
+			}
+		case *ArrayNode:
+			for _, expr := range n.Items {
+				walk(expr)
+			}
+		case *ObjectNode:
+			for _, pair := range n.Pairs {
+				walk(pair[0])
+				walk(pair[1])
+			}
+		case *GroupNode:
+			walk(n.Expr)
+			if n.ObjectNode != nil {
+				walk(n.ObjectNode)
+			}
+		case *PredicateNode:
+			walk(n.Expr)
+			for _, f := range n.Filters {
+				walk(f)
+			}
+		case *SortNode:
+			walk(n.Expr)
+			for _, term := range n.Terms {
+				walk(term.Expr)
+			}
+		case *AssignmentNode:
+			walk(n.Value)
+		case *ConditionalNode:
+			walk(n.If)
+			walk(n.Then)
+			if n.Else != nil {
+				walk(n.Else)
+			}
+		case *FunctionCallNode:
+			walk(n.Func)
+			for _, arg := range n.Args {
+				walk(arg)
+			}
+		case *FunctionApplicationNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *NumericOperatorNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *ComparisonOperatorNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *BooleanOperatorNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *StringConcatenationNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *NegationNode:
+			walk(n.RHS)
+		case *RangeNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *DefaultOperatorNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *CoalescingOperatorNode:
+			walk(n.LHS)
+			walk(n.RHS)
+		case *ObjectTransformationNode:
+			walk(n.Pattern)
+			walk(n.Updates)
+			if n.Deletes != nil {
+				walk(n.Deletes)
+			}
+		}
+	}
+	walk(n)
+	return slots
+}
+
+func seekParent(node Node, slot *AncestorSlot) (*AncestorSlot, error) {
+	switch n := node.(type) {
+	case *StepNode:
+		if n.Expr == nil {
+			return nil, &Error{Type: ErrParentNotDerived}
+		}
+		slot, err := seekParent(n.Expr, slot)
+		if err != nil {
+			return nil, err
+		}
+		if slot.Level == 0 {
+			n.Tuple = true
+			switch n.Expr.(type) {
+			case *BlockNode, *PathNode:
+				// Inner steps already set their own Ancestor; do not overwrite.
+			default:
+				if n.Ancestor == nil {
+					n.Ancestor = slot
+				} else {
+					slot.Label = n.Ancestor.Label
+					n.Ancestor = slot
+				}
+			}
+		}
+		return slot, nil
+	case *PredicateNode:
+		return seekParent(n.Expr, slot)
+	case *NameNode, *WildcardNode:
+		slot.Level--
+		return slot, nil
+	case *ParentNode:
+		slot.Level++
+		return slot, nil
+	case *BlockNode:
+		if len(n.Exprs) > 0 {
+			return seekParent(n.Exprs[len(n.Exprs)-1], slot)
+		}
+		return slot, nil
+	case *PathNode:
+		n.Tuple = true
+		idx := len(n.Steps) - 1
+		for slot.Level > 0 && idx >= 0 {
+			stepNode := ToStepNode(n.Steps[idx])
+			n.Steps[idx] = stepNode
+			var err error
+			slot, err = seekParent(stepNode, slot)
+			if err != nil {
+				return nil, err
+			}
+			idx--
+		}
+		return slot, nil
+	default:
+		return nil, &Error{
+			Type: ErrParentNotDerived,
+		}
+	}
+}
+
+func resolveAncestry(path *PathNode) error {
+	if len(path.Steps) == 0 {
+		return nil
+	}
+	lastIdx := len(path.Steps) - 1
+	lastStep := path.Steps[lastIdx]
+	slots := extractSeekingParents(lastStep)
+
+	for _, slot := range slots {
+		idx := len(path.Steps) - 2
+		for slot.Level > 0 {
+			if idx < 0 {
+				path.SeekingParent = append(path.SeekingParent, slot)
+				break
+			}
+			stepNode := ToStepNode(path.Steps[idx])
+			path.Steps[idx] = stepNode
+			idx--
+
+			for idx >= 0 && stepNode.Focus != "" && ToStepNode(path.Steps[idx]).Focus != "" {
+				stepNode = ToStepNode(path.Steps[idx])
+				path.Steps[idx] = stepNode
+				idx--
+			}
+
+			var err error
+			slot, err = seekParent(stepNode, slot)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

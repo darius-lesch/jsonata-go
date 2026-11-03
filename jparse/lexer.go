@@ -59,6 +59,8 @@ const (
 
 	typeDefault    // ?:
 	typeCoalescing // ??
+	typeFocus      // @
+	typeIndex      // #
 
 	// Keyword operators
 	typeAnd
@@ -117,6 +119,8 @@ var symbols1 = [...]tokenType{
 	'>': typeGreater,
 	'^': typeSort,
 	'&': typeConcat,
+	'@': typeFocus,
+	'#': typeIndex,
 }
 
 type runeTokenType struct {

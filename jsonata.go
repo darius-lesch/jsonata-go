@@ -148,11 +148,21 @@ func (e *Expr) Eval(data any) (any, error) {
 		return nil, ErrUndefined
 	}
 
+	if ts, ok := asTupleSequence(result); ok {
+		result = ts.asSequence().Value()
+	} else if seq, ok := asSequence(result); ok {
+		result = seq.Value()
+	}
+
+	if !result.IsValid() {
+		return nil, ErrUndefined
+	}
+
 	if !result.CanInterface() {
 		return nil, fmt.Errorf("Eval returned a non-interface value")
 	}
 
-	if result.Kind() == reflect.Pointer && result.IsNil() {
+	if resolved := jtypes.Resolve(result); resolved.Kind() == reflect.Pointer && resolved.IsNil() {
 		return nil, nil
 	}
 

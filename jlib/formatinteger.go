@@ -7,6 +7,8 @@ package jlib
 import (
 	"fmt"
 	"math"
+	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -196,6 +198,10 @@ func formatDecimalDigits(n int64, picture string, isOrdinal bool) (string, error
 			groups = append(groups, digitCount)
 			separators = append(separators, r)
 		}
+	}
+
+	if minLen == 0 {
+		return "", fmt.Errorf("D3130: The picture string is invalid")
 	}
 
 	// Pad with zeroes
@@ -390,4 +396,184 @@ func ordinalize(s string, isOrdinal bool) string {
 
 	words[len(words)-1] = strings.Join(hyphenParts, "-")
 	return strings.Join(words, " ")
+}
+
+// ParseInteger parses a string containing an integer as specified by an XPath 3.1 picture string.
+func ParseInteger(value string, picture string) (float64, error) {
+	parts := strings.Split(picture, ";")
+	primary := parts[0]
+	modifier := ""
+	if len(parts) > 1 {
+		modifier = parts[len(parts)-1]
+	}
+	isOrdinal := len(modifier) > 0 && modifier[0] == 'o'
+
+	switch primary {
+	case "A":
+		return lettersToDecimal(value, 'A'), nil
+	case "a":
+		return lettersToDecimal(value, 'a'), nil
+	case "I":
+		return romanToDecimal(value), nil
+	case "i":
+		return romanToDecimal(strings.ToUpper(value)), nil
+	case "W", "Ww", "w":
+		return wordsToNumber(strings.ToLower(value))
+	default:
+		return parseDecimalDigits(value, primary, isOrdinal)
+	}
+}
+
+func lettersToDecimal(letters string, aChar rune) float64 {
+	var decimal float64
+	runes := []rune(letters)
+	for i := 0; i < len(runes); i++ {
+		r := runes[len(runes)-i-1]
+		decimal += float64(r-aChar+1) * math.Pow(26, float64(i))
+	}
+	return decimal
+}
+
+var romanValMap = map[byte]float64{
+	'M': 1000, 'D': 500, 'C': 100, 'L': 50, 'X': 10, 'V': 5, 'I': 1,
+}
+
+func romanToDecimal(roman string) float64 {
+	var decimal float64
+	maxVal := float64(1)
+	for i := len(roman) - 1; i >= 0; i-- {
+		val := romanValMap[roman[i]]
+		if val < maxVal {
+			decimal -= val
+		} else {
+			maxVal = val
+			decimal += val
+		}
+	}
+	return decimal
+}
+
+var (
+	reWordSplit = regexp.MustCompile(`,\s|\sand\s|[\s\-]`)
+	wordValues  = buildWordValues()
+)
+
+func buildWordValues() map[string]float64 {
+	m := make(map[string]float64)
+	few := []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+		"eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
+	ordinals := []string{"zeroth", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+		"eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth"}
+	decades := []string{"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety", "hundred"}
+	magnitudes := []string{"thousand", "million", "billion", "trillion"}
+
+	for i, w := range few {
+		m[w] = float64(i)
+	}
+	for i, w := range ordinals {
+		m[w] = float64(i)
+	}
+	for i, w := range decades {
+		val := float64((i + 2) * 10)
+		m[w] = val
+		m[w[:len(w)-1]+"ieth"] = val
+	}
+	m["hundredth"] = 100
+	for i, w := range magnitudes {
+		val := math.Pow(10, float64((i+1)*3))
+		m[w] = val
+		m[w+"th"] = val
+	}
+	return m
+}
+
+func wordsToNumber(text string) (float64, error) {
+	parts := reWordSplit.Split(text, -1)
+	segs := []float64{0}
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		val, ok := wordValues[part]
+		if !ok {
+			return 0, fmt.Errorf("invalid number word %q", part)
+		}
+		if val < 100 {
+			top := segs[len(segs)-1]
+			segs = segs[:len(segs)-1]
+			if top >= 1000 {
+				segs = append(segs, top)
+				top = 0
+			}
+			segs = append(segs, top+val)
+		} else {
+			segs[len(segs)-1] *= val
+		}
+	}
+	var sum float64
+	for _, s := range segs {
+		sum += s
+	}
+	return sum, nil
+}
+
+func parseDecimalDigits(value string, picture string, isOrdinal bool) (float64, error) {
+	var firstZeroRune rune
+	minLen := 0
+	var separators []rune
+
+	for _, r := range picture {
+		if unicode.IsDigit(r) {
+			curr := r
+			for unicode.IsDigit(curr - 1) {
+				curr--
+				if r-curr >= 10 {
+					break
+				}
+			}
+			if firstZeroRune == 0 {
+				firstZeroRune = curr
+			} else if curr != firstZeroRune {
+				return 0, fmt.Errorf("D3131: The picture string must not contain different zero digits")
+			}
+			minLen++
+		} else if r != '#' {
+			separators = append(separators, r)
+		}
+	}
+
+	if minLen == 0 {
+		return 0, fmt.Errorf("D3130: The picture string is invalid")
+	}
+
+	digits := value
+	if isOrdinal && len(digits) >= 2 {
+		digits = digits[:len(digits)-2]
+	}
+
+	for _, sep := range separators {
+		digits = strings.ReplaceAll(digits, string(sep), "")
+	}
+
+	if firstZeroRune != '0' {
+		var mapped strings.Builder
+		for _, r := range digits {
+			if r >= firstZeroRune && r <= firstZeroRune+9 {
+				mapped.WriteRune('0' + (r - firstZeroRune))
+			} else {
+				mapped.WriteRune(r)
+			}
+		}
+		digits = mapped.String()
+	}
+
+	n, err := strconv.ParseInt(digits, 10, 64)
+	if err != nil {
+		f, ferr := strconv.ParseFloat(digits, 64)
+		if ferr != nil {
+			return 0, err
+		}
+		return f, nil
+	}
+	return float64(n), nil
 }

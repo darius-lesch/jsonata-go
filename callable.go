@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/darius-lesch/jsonata-go/v2/jparse"
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
@@ -212,6 +213,9 @@ func (c *goCallable) SetContext(context reflect.Value) {
 }
 
 func (c *goCallable) ParamCount() int {
+	if c.name == "string" {
+		return 1
+	}
 	return len(c.params)
 }
 
@@ -458,96 +462,195 @@ func (f *lambdaCallable) validateArgs(argv []reflect.Value) ([]reflect.Value, er
 		return argv, nil
 	}
 
-	var err error
+	var fullPattern strings.Builder
+	fullPattern.WriteByte('^')
+	hasVariadic := false
+	for _, p := range f.params {
+		if p.Option == jparse.ParamVariadic {
+			hasVariadic = true
+		}
+		fullPattern.WriteByte('(')
+		fullPattern.WriteString(paramRegex(p))
+		fullPattern.WriteByte(')')
+	}
+	fullPattern.WriteByte('$')
 
-	if argv, err = f.validateArgCount(argv); err != nil {
-		return nil, err
+	var supplied strings.Builder
+	for _, arg := range argv {
+		supplied.WriteByte(argSymbol(arg))
+	}
+	suppliedSig := supplied.String()
+
+	re := regexp.MustCompile(fullPattern.String())
+	submatches := re.FindStringSubmatch(suppliedSig)
+	if submatches != nil {
+		var validatedArgs []reflect.Value
+		argIndex := 0
+		for index, param := range f.params {
+			match := submatches[index+1]
+			if match == "" {
+				if param.Option == jparse.ParamContextable {
+					ctxType := string(argSymbol(f.context))
+					ctxRe := regexp.MustCompile("^" + paramBaseRegex(param) + "$")
+					if !ctxRe.MatchString(ctxType) {
+						return nil, newArgTypeError(f, argIndex+1)
+					}
+					ctx := f.context
+					if param.Type == jparse.ParamTypeArray {
+						if ctx == undefined {
+							validatedArgs = append(validatedArgs, undefined)
+						} else {
+							arrCtx := arrayify(ctx)
+							if !f.validArgType(arrCtx, param) {
+								return nil, newArgTypeError(f, argIndex+1)
+							}
+							validatedArgs = append(validatedArgs, arrCtx)
+						}
+					} else {
+						if ctx != undefined && !f.validArgType(ctx, param) {
+							return nil, newArgTypeError(f, argIndex+1)
+						}
+						validatedArgs = append(validatedArgs, ctx)
+					}
+				} else {
+					var arg reflect.Value
+					if argIndex < len(argv) {
+						arg = argv[argIndex]
+						argIndex++
+					} else {
+						arg = undefined
+					}
+					validatedArgs = append(validatedArgs, arg)
+				}
+			} else {
+				for i := 0; i < len(match); i++ {
+					single := match[i]
+					var arg reflect.Value
+					if argIndex < len(argv) {
+						arg = argv[argIndex]
+						argIndex++
+					} else {
+						arg = undefined
+					}
+					if param.Type == jparse.ParamTypeArray {
+						if single == 'm' {
+							arg = undefined
+						} else {
+							arg = arrayify(arg)
+							if !f.validArgType(arg, param) {
+								return nil, newArgTypeError(f, argIndex)
+							}
+						}
+						validatedArgs = append(validatedArgs, arg)
+					} else {
+						if arg != undefined && !f.validArgType(arg, param) {
+							return nil, newArgTypeError(f, argIndex)
+						}
+						validatedArgs = append(validatedArgs, arg)
+					}
+				}
+			}
+		}
+		return validatedArgs, nil
 	}
 
-	if argv, err = f.validateArgTypes(argv); err != nil {
-		return nil, err
+	partialPattern := "^"
+	goodTo := 0
+	for _, p := range f.params {
+		partialPattern += paramRegex(p)
+		rePartial := regexp.MustCompile(partialPattern)
+		loc := rePartial.FindStringIndex(suppliedSig)
+		if loc == nil {
+			if goodTo >= len(argv) {
+				return nil, newArgCountError(f, len(argv))
+			}
+			return nil, newArgTypeError(f, goodTo+1)
+		}
+		goodTo = loc[1]
 	}
 
-	return f.wrapVariadicArgs(argv), nil
+	if !hasVariadic && len(argv) > len(f.params) {
+		return nil, newArgCountError(f, len(argv))
+	}
+	return nil, newArgTypeError(f, goodTo+1)
 }
 
-func (f *lambdaCallable) validateArgCount(argv []reflect.Value) ([]reflect.Value, error) {
-
-	// argc is the number of arguments originally passed to
-	// the function.
-	argc := len(argv)
-
-	// paramCount is the number of parameters specified in
-	// the function's type signature.
-	paramCount := len(f.params)
-
-	// If there are fewer arguments than parameters and the
-	// first parameter is contextable, insert the evaluation
-	// context into the argument list.
-	if argc < paramCount && f.params[0].Option == jparse.ParamContextable {
-		argv = append([]reflect.Value{f.context}, argv...)
-	}
-
-	// If there are still fewer arguments than parameters and
-	// the missing arguments correspond to optional parameters,
-	// append undefined arguments to the argument list.
-	for i := len(argv); i < paramCount; i++ {
-		if f.params[i].Option != jparse.ParamOptional {
-			break
+func paramBaseRegex(p jparse.Param) string {
+	typ := p.Type
+	switch {
+	case typ&jparse.ParamTypeAny != 0:
+		return "[asnblfom]"
+	case typ&jparse.ParamTypeJSON != 0:
+		return "[asnblom]"
+	case typ == jparse.ParamTypeArray:
+		return "[asnblfom]"
+	case typ == jparse.ParamTypeFunc:
+		return "f"
+	default:
+		var chars strings.Builder
+		chars.WriteByte('[')
+		if typ&jparse.ParamTypeNumber != 0 {
+			chars.WriteByte('n')
 		}
-		argv = append(argv, undefined)
+		if typ&jparse.ParamTypeString != 0 {
+			chars.WriteByte('s')
+		}
+		if typ&jparse.ParamTypeBool != 0 {
+			chars.WriteByte('b')
+		}
+		if typ&jparse.ParamTypeNull != 0 {
+			chars.WriteByte('l')
+		}
+		if typ&jparse.ParamTypeArray != 0 {
+			chars.WriteByte('a')
+		}
+		if typ&jparse.ParamTypeObject != 0 {
+			chars.WriteByte('o')
+		}
+		if typ&jparse.ParamTypeFunc != 0 {
+			chars.WriteByte('f')
+		}
+		chars.WriteByte('m')
+		chars.WriteByte(']')
+		return chars.String()
 	}
-
-	// argCount is the final number of arguments including
-	// any added by this method.
-	argCount := len(argv)
-
-	// isVar indicates whether the function is variadic.
-	isVar := paramCount > 0 &&
-		f.params[paramCount-1].Option == jparse.ParamVariadic
-
-	// If there are a) fewer arguments than parameters or b)
-	// extra arguments on a non-variadic function, return an
-	// error.
-	if argCount < paramCount || (argCount > paramCount && !isVar) {
-		return nil, newArgCountError(f, argc)
-	}
-
-	return argv, nil
 }
 
-func (f *lambdaCallable) validateArgTypes(argv []reflect.Value) ([]reflect.Value, error) {
-
-	paramCount := len(f.params)
-
-	for i, arg := range argv {
-
-		// Don't type check undefined arguments.
-		if arg == undefined {
-			continue
-		}
-
-		var param jparse.Param
-
-		if i < paramCount {
-			param = f.params[i]
-		} else if paramCount > 0 {
-			param = f.params[paramCount-1]
-		}
-
-		// If a parameter is an array type, force the
-		// corresponding argument to be an array.
-		if param.Type == jparse.ParamTypeArray {
-			arg = arrayify(arg)
-			argv[i] = arg
-		}
-
-		if !f.validArgType(arg, param) {
-			return nil, newArgTypeError(f, i+1)
-		}
+func paramRegex(p jparse.Param) string {
+	base := paramBaseRegex(p)
+	switch p.Option {
+	case jparse.ParamOptional, jparse.ParamContextable:
+		return base + "?"
+	case jparse.ParamVariadic:
+		return base + "+"
+	default:
+		return base
 	}
+}
 
-	return argv, nil
+func argSymbol(v reflect.Value) byte {
+	if v == undefined || !v.IsValid() {
+		return 'm'
+	}
+	if isNull(v) {
+		return 'l'
+	}
+	switch {
+	case jtypes.IsCallable(v):
+		return 'f'
+	case jtypes.IsString(v):
+		return 's'
+	case jtypes.IsNumber(v):
+		return 'n'
+	case jtypes.IsBool(v):
+		return 'b'
+	case jtypes.IsArray(v):
+		return 'a'
+	case jtypes.IsMap(v), jtypes.IsStruct(v):
+		return 'o'
+	default:
+		return 'm'
+	}
 }
 
 func (f *lambdaCallable) validArgType(arg reflect.Value, p jparse.Param) bool {
@@ -560,8 +663,9 @@ func (f *lambdaCallable) validArgType(arg reflect.Value, p jparse.Param) bool {
 
 	paramTypeJSON := typ&jparse.ParamTypeJSON != 0
 
-	// TODO: Handle ParamTypeNull
 	switch {
+	case isNull(arg):
+		return paramTypeJSON || typ&jparse.ParamTypeNull != 0
 	case jtypes.IsString(arg):
 		return paramTypeJSON || typ&jparse.ParamTypeString != 0
 	case jtypes.IsNumber(arg):
@@ -588,25 +692,6 @@ func (f *lambdaCallable) validArgType(arg reflect.Value, p jparse.Param) bool {
 	}
 
 	return false
-}
-
-func (f *lambdaCallable) wrapVariadicArgs(argv []reflect.Value) []reflect.Value {
-
-	paramCount := len(f.params)
-
-	if paramCount < 1 ||
-		f.params[paramCount-1].Option != jparse.ParamVariadic {
-		return argv
-	}
-
-	n := len(argv) - paramCount + 1
-	vars := reflect.MakeSlice(typeInterfaceSlice, n, n)
-
-	for i := range n {
-		vars.Index(i).Set(argv[paramCount-1+i])
-	}
-
-	return append(argv[:paramCount-1], vars)
 }
 
 // A partialCallable represents the partial application of

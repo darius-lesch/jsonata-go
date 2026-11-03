@@ -1541,7 +1541,7 @@ func TestNumericOperatorNode(t *testing.T) {
 		{
 			Input: "%",
 			Error: &jparse.Error{
-				Type:     jparse.ErrPrefix,
+				Type:     jparse.ErrParentNotDerived,
 				Token:    "%",
 				Position: 0,
 			},

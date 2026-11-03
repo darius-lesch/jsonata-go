@@ -131,7 +131,7 @@ func TestString(t *testing.T) {
 
 	for _, test := range data {
 
-		got, err := jlib.String(test.Input)
+		got, err := jlib.String(test.Input, jtypes.OptionalBool{})
 
 		if got != test.Output {
 			t.Errorf("%v: Expected %q, got %q", test.Input, test.Output, got)
@@ -359,7 +359,10 @@ func TestPad(t *testing.T) {
 
 	for _, test := range data {
 
-		got := jlib.Pad(src, test.Width, test.Chars)
+		got, err := jlib.Pad(src, test.Width, test.Chars)
+		if err != nil {
+			t.Errorf("pad(%q, %d): unexpected error: %v", src, test.Width, err)
+		}
 
 		if got != test.Output {
 

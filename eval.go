@@ -40,6 +40,10 @@ func eval(node jparse.Node, input reflect.Value, env *environment) (reflect.Valu
 		v, err = evalName(node, input, env)
 	case *jparse.PathNode:
 		v, err = evalPath(node, input, env)
+	case *jparse.StepNode:
+		v, err = evalStepNode(node, input, env)
+	case *jparse.ParentNode:
+		v, err = evalParent(node, env)
 	case *jparse.NegationNode:
 		v, err = evalNegation(node, input, env)
 	case *jparse.RangeNode:
@@ -143,6 +147,9 @@ func evalName(node *jparse.NameNode, data reflect.Value, env *environment) (refl
 		v = data.FieldByName(node.Value)
 	case jtypes.IsMap(data):
 		v = data.MapIndex(reflect.ValueOf(node.Value))
+		if v.IsValid() && v.Kind() == reflect.Interface && v.IsNil() {
+			v = reflect.ValueOf(null)
+		}
 	case jtypes.IsArray(data):
 		v, err = evalNameArray(node, data, env)
 	default:
@@ -185,6 +192,26 @@ func evalNameArray(node *jparse.NameNode, data reflect.Value, env *environment) 
 	return reflect.ValueOf(results), nil
 }
 
+func evalStepNode(node *jparse.StepNode, data reflect.Value, env *environment) (reflect.Value, error) {
+	v, err := eval(node.Expr, data, env)
+	if err != nil || v == undefined || !v.IsValid() {
+		return undefined, err
+	}
+	for _, stage := range node.Stages {
+		switch stage.Type {
+		case jparse.StageFilter:
+			v, err = applyFilter(stage.Expr, arrayify(v), env)
+			if err != nil {
+				return undefined, err
+			}
+			if v.Len() == 0 {
+				return undefined, nil
+			}
+		}
+	}
+	return normalizeArray(v), nil
+}
+
 func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (reflect.Value, error) {
 	if len(node.Steps) == 0 {
 		return undefined, nil
@@ -194,15 +221,22 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 	switch step0 := node.Steps[0].(type) {
 	case (*jparse.VariableNode):
 		isVar = true
+	case (*jparse.StepNode):
+		_, isVar = step0.Expr.(*jparse.VariableNode)
 	case (*jparse.PredicateNode):
 		_, isVar = step0.Expr.(*jparse.VariableNode)
+	}
+
+	var tupleBindings []tuple
+	if ts, ok := asTupleSequence(data); ok {
+		tupleBindings = ts.tuples
 	}
 
 	output := data
 	_, isSeq := asSequence(data)
 
 	// Mirror JS: Ensure the root context acts as a single sequence entity
-	if isVar || !isSeq {
+	if isVar || (!isSeq && tupleBindings == nil) {
 		seq := newSequence(1)
 		if data.IsValid() {
 			seq.Append(data.Interface())
@@ -213,23 +247,83 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 		output = reflect.ValueOf(seq)
 	}
 
+	isTupleStream := (tupleBindings != nil)
 	var err error
 	lastIndex := len(node.Steps) - 1
-	for i, step := range node.Steps {
 
-		if step0, ok := step.(*jparse.ArrayNode); ok && i == 0 {
+	for i, step := range node.Steps {
+		stepNode := jparse.ToStepNode(step)
+		if stepNode.Tuple || (node.Tuple && isTupleStream) {
+			isTupleStream = true
+		}
+
+		if step0, ok := step.(*jparse.ArrayNode); ok && i == 0 && !isTupleStream {
 			output, err = eval(step0, output, env)
+		} else if isTupleStream {
+			var inSeq *sequence
+			if seq, ok := asSequence(output); ok {
+				inSeq = seq
+			} else {
+				inSeq = newSequence(1)
+				if output.IsValid() {
+					inSeq.Append(output.Interface())
+				} else {
+					inSeq.Append(nil)
+				}
+			}
+			tupleBindings, err = evalTupleStep(stepNode, inSeq, tupleBindings, env)
 		} else {
 			output, err = evalPathStep(step, output, env, i == lastIndex)
 		}
 
-		if err != nil || output == undefined {
+		if err != nil {
 			return undefined, err
 		}
-
-		if jtypes.IsArray(output) && jtypes.Resolve(output).Len() == 0 {
+		if isTupleStream && len(tupleBindings) == 0 {
+			if node.Tuple {
+				return reflect.ValueOf(&tupleSequence{tuples: nil}), nil
+			}
 			return undefined, nil
 		}
+		if !isTupleStream && output == undefined {
+			return undefined, nil
+		}
+
+		if !isTupleStream {
+			if jtypes.IsArray(output) && jtypes.Resolve(output).Len() == 0 {
+				return undefined, nil
+			}
+		} else {
+			if stepNode.Focus == "" {
+				seq := newSequence(len(tupleBindings))
+				for _, t := range tupleBindings {
+					v := t["@"]
+					if v.IsValid() && v.CanInterface() {
+						seq.Append(v.Interface())
+					} else {
+						seq.Append(nil)
+					}
+				}
+				output = reflect.ValueOf(seq)
+			}
+		}
+	}
+
+	if isTupleStream {
+		if node.Tuple {
+			return reflect.ValueOf(&tupleSequence{tuples: tupleBindings}), nil
+		}
+		seq := newSequence(len(tupleBindings))
+		seq.keepSingletons = node.KeepArrays
+		for _, t := range tupleBindings {
+			v := t["@"]
+			if v.IsValid() && v.CanInterface() {
+				seq.Append(v.Interface())
+			} else {
+				seq.Append(nil)
+			}
+		}
+		output = reflect.ValueOf(seq)
 	}
 
 	if node.KeepArrays {
@@ -255,6 +349,11 @@ func evalPath(node *jparse.PathNode, data reflect.Value, env *environment) (refl
 }
 
 func evalPathStep(step jparse.Node, data reflect.Value, env *environment, lastStep bool) (reflect.Value, error) {
+	if jparse.IsSortNode(step) {
+		sortNode := step.(*jparse.SortNode)
+		return evalSort(sortNode, data, env)
+	}
+
 	var err error
 	var results []reflect.Value
 
@@ -428,6 +527,8 @@ func evalRange(node *jparse.RangeNode, data reflect.Value, env *environment) (re
 
 func isConstructor(node jparse.Node) bool {
 	switch n := node.(type) {
+	case *jparse.StepNode:
+		return isConstructor(n.Expr)
 	case *jparse.ArrayNode:
 		return true
 	case *jparse.PathNode:
@@ -494,6 +595,10 @@ func evalArray(node *jparse.ArrayNode, data reflect.Value, env *environment) (re
 }
 
 func evalObject(node *jparse.ObjectNode, data reflect.Value, env *environment) (reflect.Value, error) {
+	if ts, ok := asTupleSequence(data); ok {
+		return evalObjectTuples(node, ts.tuples, env)
+	}
+
 	// Safely unwrap sequences into native slices before coercing to array
 	if seq, ok := asSequence(data); ok {
 		data = reflect.ValueOf(seq.values)
@@ -744,6 +849,20 @@ func evalPredicate(node *jparse.PredicateNode, data reflect.Value, env *environm
 		return undefined, err
 	}
 
+	if ts, ok := asTupleSequence(items); ok {
+		tuples := ts.tuples
+		for _, filter := range node.Filters {
+			tuples, err = evalFilterTuples(filter, tuples, env)
+			if err != nil {
+				return undefined, err
+			}
+			if len(tuples) == 0 {
+				return undefined, nil
+			}
+		}
+		return reflect.ValueOf(&tupleSequence{tuples: tuples}), nil
+	}
+
 	for _, filter := range node.Filters {
 
 		// TODO: If this filter is of type *jparse.NumberNode,
@@ -890,20 +1009,15 @@ func makeLessFunc(info []*sortinfo, terms []jparse.SortTerm) func(int, int) bool
 	}
 }
 
-func evalSort(node *jparse.SortNode, data reflect.Value, env *environment) (reflect.Value, error) {
-	items, err := eval(node.Expr, data, env)
-	if err != nil || items == undefined {
-		return undefined, err
-	}
-
+func sortValue(items reflect.Value, terms []jparse.SortTerm, env *environment) (reflect.Value, error) {
 	items = arrayify(items)
 
-	info, err := buildSortInfo(items, node.Terms, env)
+	info, err := buildSortInfo(items, terms, env)
 	if err != nil {
 		return undefined, err
 	}
 
-	sort.SliceStable(info, makeLessFunc(info, node.Terms))
+	sort.SliceStable(info, makeLessFunc(info, terms))
 
 	results := reflect.MakeSlice(typeInterfaceSlice, len(info), len(info))
 
@@ -912,6 +1026,49 @@ func evalSort(node *jparse.SortNode, data reflect.Value, env *environment) (refl
 	}
 
 	return normalizeArray(results), nil
+}
+
+func evalSort(node *jparse.SortNode, data reflect.Value, env *environment) (reflect.Value, error) {
+	var items reflect.Value
+	var err error
+	var isSeq bool
+	var keepSingletons bool
+
+	if node.Expr != nil {
+		items, err = eval(node.Expr, data, env)
+		if err != nil || items == undefined {
+			return undefined, err
+		}
+	} else {
+		if seq, ok := asSequence(data); ok {
+			items = reflect.ValueOf(seq.values)
+			isSeq = true
+			keepSingletons = seq.keepSingletons
+		} else {
+			items = data
+		}
+	}
+
+	if ts, ok := asTupleSequence(items); ok {
+		sortedTuples, err := sortTuples(ts.tuples, node.Terms, env)
+		if err != nil {
+			return undefined, err
+		}
+		return reflect.ValueOf(&tupleSequence{tuples: sortedTuples, keepSingletons: ts.keepSingletons}), nil
+	}
+
+	sorted, err := sortValue(items, node.Terms, env)
+	if err != nil {
+		return undefined, err
+	}
+
+	if isSeq {
+		if slice, ok := sorted.Interface().([]any); ok {
+			return reflect.ValueOf(&sequence{values: slice, keepSingletons: keepSingletons}), nil
+		}
+	}
+
+	return sorted, nil
 }
 
 func evalLambda(node *jparse.LambdaNode, data reflect.Value, env *environment) (reflect.Value, error) {
@@ -1030,9 +1187,26 @@ func evalFunctionApplication(node *jparse.FunctionApplicationNode, data reflect.
 	// the left hand side into the argument list and
 	// evaluate it.
 	if f, ok := node.RHS.(*jparse.FunctionCallNode); ok {
+		call := *f
+		call.Args = append([]jparse.Node{node.LHS}, f.Args...)
+		v, err := evalFunctionCall(&call, data, env)
+		if err != nil || v == undefined {
+			return v, err
+		}
+		if lhsPath, ok := node.LHS.(*jparse.PathNode); ok && lhsPath.KeepArrays && !jtypes.IsArray(v) && v.CanInterface() {
+			return reflect.ValueOf([]any{v.Interface()}), nil
+		}
+		return v, nil
+	}
 
-		f.Args = append([]jparse.Node{node.LHS}, f.Args...)
-		return evalFunctionCall(f, data, env)
+	if p, ok := node.RHS.(*jparse.PathNode); ok && len(p.Steps) == 1 {
+		if f, ok := p.Steps[0].(*jparse.FunctionCallNode); ok {
+			call := *f
+			call.Args = append([]jparse.Node{node.LHS}, f.Args...)
+			pathCopy := *p
+			pathCopy.Steps = []jparse.Node{&call}
+			return evalPath(&pathCopy, data, env)
+		}
 	}
 
 	// Evaluate both sides and return any errors.
@@ -1178,9 +1352,9 @@ func evalComparisonOperator(node *jparse.ComparisonOperatorNode, data reflect.Va
 		}
 	}
 
-	// Return undefined if either side is undefined (except for equality checks)
+	// Return undefined if either side is undefined (except for equality and 'in' checks)
 	if lhs == undefined || rhs == undefined {
-		if node.Type != jparse.ComparisonEqual && node.Type != jparse.ComparisonNotEqual {
+		if node.Type != jparse.ComparisonEqual && node.Type != jparse.ComparisonNotEqual && node.Type != jparse.ComparisonIn {
 			return undefined, nil
 		}
 	}
@@ -1218,9 +1392,17 @@ func needComparableTypes(op jparse.ComparisonOperator) bool {
 	}
 }
 
+func isNull(v reflect.Value) bool {
+	v = jtypes.Resolve(v)
+	return v.IsValid() && (v.Kind() == reflect.Interface || v.Kind() == reflect.Pointer) && v.IsNil() && !jtypes.IsCallable(v)
+}
+
 func eq(lhs, rhs reflect.Value) bool {
 	if lhs == undefined || rhs == undefined {
 		return false
+	}
+	if isNull(lhs) || isNull(rhs) {
+		return isNull(lhs) && isNull(rhs)
 	}
 	// Numbers, strings, arrays, objects and booleans are compared by value.
 	// Two strings might be different objects in memory but
@@ -1281,9 +1463,9 @@ func lte(lhs, rhs reflect.Value) bool {
 }
 
 func in(lhs, rhs reflect.Value) bool {
-	// TODO: Does not work with null, e.g.
-	//    null in null    // evaluates to false
-	//    null in [null]  // evaluates to false
+	if lhs == undefined || rhs == undefined {
+		return false
+	}
 
 	rhs = arrayify(rhs)
 
@@ -1342,7 +1524,7 @@ func evalStringConcatenation(node *jparse.StringConcatenationNode, data reflect.
 		if v == undefined || !v.CanInterface() {
 			return "", nil
 		}
-		return jlib.String(v.Interface())
+		return jlib.String(v.Interface(), jtypes.OptionalBool{})
 	}
 
 	// Evaluate both sides and return any errors.
@@ -1384,7 +1566,9 @@ func walkObjectValues(v reflect.Value, fn func(reflect.Value)) {
 		}
 	case jtypes.IsStruct(v):
 		for i, N := 0, v.NumField(); i < N; i++ {
-			fn(v.Field(i))
+			if f := v.Field(i); f.CanInterface() {
+				fn(f)
+			}
 		}
 	}
 }
@@ -1472,6 +1656,9 @@ func (s sequence) Value() reflect.Value {
 	case n == 0:
 		return undefined
 	case n == 1 && !s.keepSingletons:
+		if s.values[0] == nil {
+			return reflect.ValueOf(null)
+		}
 		return reflect.ValueOf(s.values[0])
 	default:
 		return reflect.ValueOf(s.values)
@@ -1492,8 +1679,13 @@ func asSequence(v reflect.Value) (*sequence, bool) {
 		return v.Interface().(*sequence), true
 	}
 
-	if jtypes.Resolve(v).Type() == typeSequence && v.CanAddr() {
+	if v.Type() == typeSequence && v.CanAddr() {
 		return v.Addr().Interface().(*sequence), true
+	}
+
+	resolved := jtypes.Resolve(v)
+	if resolved.IsValid() && resolved.CanInterface() && resolved.Type() == typeSequencePtr {
+		return resolved.Interface().(*sequence), true
 	}
 
 	return nil, false
