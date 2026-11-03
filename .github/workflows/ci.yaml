@@ -64,3 +64,30 @@ jobs:
         run: |
           go build -o /dev/null ./jsonata-server
           go build -o /dev/null ./jsonata-test
+
+  upstream-tests:
+    name: Run Upstream JSONata Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod" # Locks CI to the exact version used locally
+
+      - name: Checkout Upstream JSONata Tests
+        uses: actions/checkout@v4
+        with:
+          repository: jsonata-js/jsonata
+          ref: v2.2.2
+          path: upstream-jsonata
+          sparse-checkout: |
+            test/test-suite
+          sparse-checkout-cone-mode: false
+
+      - name: Execute Upstream Test Suite
+        run: |
+          go install ./jsonata-test
+          jsonata-test upstream-jsonata/test/test-suite
