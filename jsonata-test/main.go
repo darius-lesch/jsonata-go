@@ -109,6 +109,9 @@ func run(testdir string, datadir string, filter string) error {
 
 	fmt.Println()
 	fmt.Println(numPassed, "passed", numFailed, "failed")
+	if numFailed > 0 {
+		return fmt.Errorf("%d upstream test(s) failed", numFailed)
+	}
 	return nil
 }
 
