@@ -5,10 +5,12 @@
 package main
 
 import (
+	"embed"
 	"encoding/json/jsontext"
 	jsonv2 "encoding/json/v2"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -17,6 +19,9 @@ import (
 	jsonata "github.com/darius-lesch/jsonata-go/v2"
 	"github.com/darius-lesch/jsonata-go/v2/jtypes"
 )
+
+//go:embed site
+var defaultSiteFS embed.FS
 
 func init() {
 
@@ -41,11 +46,23 @@ func init() {
 func main() {
 
 	port := flag.Uint("port", 8080, "The port `number` to serve on")
+	siteDir := flag.String("site", "", "The directory to serve static site files from (optional; defaults to embedded assets)")
 	flag.Parse()
 
 	http.HandleFunc("/eval", evaluate)
 	http.HandleFunc("/bench", benchmark)
-	http.Handle("/", http.FileServer(http.Dir("site")))
+
+	var fileServer http.Handler
+	if *siteDir != "" {
+		fileServer = http.FileServer(http.Dir(*siteDir))
+	} else {
+		subFS, err := fs.Sub(defaultSiteFS, "site")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fileServer = http.FileServer(http.FS(subFS))
+	}
+	http.Handle("/", fileServer)
 
 	log.Printf("Starting JSONata Server on port %d:\n", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), nil))
