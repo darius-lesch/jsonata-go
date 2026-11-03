@@ -115,17 +115,40 @@ try {
 
 ### 1. JSONata Server (`jsonata-server`)
 
-A locally hosted version of the [JSONata Exerciser](http://try.jsonata.org/) web UI for interactively testing expressions against live JSON payloads.
+A locally hosted version of the [JSONata Exerciser](http://try.jsonata.org/) web UI for interactively testing expressions against live JSON payloads. Static assets (HTML, CSS, JavaScript, and CodeMirror editor) are embedded directly into the binary, allowing `jsonata-server` to be executed from any working directory without external file dependencies.
 
 #### Installation & Running
 
 ```bash
-go install github.com/darius-lesch/jsonata-go/v2/jsonata-server@latest
+# Install the binary locally:
+go install ./jsonata-server
+
+# Or install the latest release remotely:
+# go install github.com/darius-lesch/jsonata-go/v2/jsonata-server@latest
+
+# Launch the server (default port 8080):
 jsonata-server -port=8080
 
+# Or run directly without installation:
+go run ./jsonata-server -port=8080
 ```
 
-Navigate to `http://localhost:8080` in your browser.
+Navigate to `http://localhost:8080` in your browser to use the interactive exerciser.
+
+#### CLI Flags
+
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `-port` | `8080` | The port number to serve HTTP traffic on. |
+| `-site` | `""` | Optional path to a custom directory to serve static files from (overriding embedded assets; useful for frontend development). |
+
+#### HTTP Endpoints
+
+* **`GET /`**: Serves the interactive JSONata Exerciser web application.
+* **`POST /eval`**: Evaluates a JSONata expression against a JSON payload. Expects `application/x-www-form-urlencoded` or multipart form data:
+  * `expr`: The JSONata query/expression string.
+  * `json`: The JSON input document string.
+* **`GET /bench`**: Executes a predefined benchmark expression against sample telemetry data and returns `"success"`.
 
 ---
 
