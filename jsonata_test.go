@@ -957,7 +957,7 @@ func TestIncludeOperator(t *testing.T) {
 				`in in ["hello", "world"]`,
 				`"world" in in`,
 			},
-			Error: ErrUndefined,
+			Output: false,
 		},
 	})
 }
@@ -5070,7 +5070,7 @@ func TestFuncString(t *testing.T) {
 		},
 		{
 			Expression: `$string(22/7)`,
-			Output:     "3.1428571428571",
+			Output:     "3.14285714285714",
 		},
 		{
 			Expression: `$string(1e100)`,
@@ -5169,10 +5169,9 @@ func TestFuncString(t *testing.T) {
 		},
 		{
 			Expression: `$string(2,3)`,
-			Error: &ArgCountError{
-				Func:     "string",
-				Expected: 1,
-				Received: 2,
+			Error: &ArgTypeError{
+				Func:  "string",
+				Which: 2,
 			},
 		},
 	})

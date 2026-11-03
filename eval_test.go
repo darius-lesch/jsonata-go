@@ -4315,3 +4315,67 @@ func testEvalTestCases(t *testing.T, tests []evalTestCase) {
 		}
 	}
 }
+
+func TestParentOperator(t *testing.T) {
+	dataJSON := []byte(`{
+		"Account": {
+			"Account Name": "Firefly",
+			"Order": [
+				{
+					"OrderID": "order103",
+					"Product": [
+						{"Product Name": "Bowler Hat", "SKU": "0406654608", "Price": 34.45},
+						{"Product Name": "Trilby hat", "SKU": "0406634348", "Price": 21.67}
+					]
+				},
+				{
+					"OrderID": "order104",
+					"Product": [
+						{"Product Name": "Bowler Hat", "SKU": "040657863", "Price": 34.45},
+						{"Product Name": "Cloak", "SKU": "0406654603", "Price": 107.99}
+					]
+				}
+			]
+		}
+	}`)
+
+	t.Run("single parent", func(t *testing.T) {
+		e := MustCompile(`Account.Order.Product.{"order": %.OrderID}`)
+		res, err := e.EvalBytes(dataJSON)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := `[{"order":"order103"},{"order":"order103"},{"order":"order104"},{"order":"order104"}]`
+		if string(res) != expected {
+			t.Errorf("expected %s, got %s", expected, string(res))
+		}
+	})
+
+	t.Run("nested parent and grandparent", func(t *testing.T) {
+		e := MustCompile(`Account.(Order.(Product)).{
+			'Product': ` + "`Product Name`" + `,
+			'Order': %.OrderID,
+			'Account': %.%.` + "`Account Name`" + `
+		}`)
+		res, err := e.EvalBytes(dataJSON)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := `[{"Account":"Firefly","Order":"order103","Product":"Bowler Hat"},{"Account":"Firefly","Order":"order103","Product":"Trilby hat"},{"Account":"Firefly","Order":"order104","Product":"Bowler Hat"},{"Account":"Firefly","Order":"order104","Product":"Cloak"}]`
+		if string(res) != expected {
+			t.Errorf("expected %s, got %s", expected, string(res))
+		}
+	})
+
+	t.Run("sort with parent terms", func(t *testing.T) {
+		e := MustCompile(`Account.Order.Product.SKU^(%.Price, >%.%.OrderID)`)
+		res, err := e.EvalBytes(dataJSON)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := `["0406634348","040657863","0406654608","0406654603"]`
+		if string(res) != expected {
+			t.Errorf("expected %s, got %s", expected, string(res))
+		}
+	})
+}

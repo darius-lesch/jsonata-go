@@ -149,6 +149,11 @@ var baseEnv = initBaseEnv(map[string]Extension{
 		UndefinedHandler:   defaultUndefinedHandler,
 		EvalContextHandler: contextHandlerFormatNumber,
 	},
+	"parseInteger": {
+		Func:               jlib.ParseInteger,
+		UndefinedHandler:   defaultUndefinedHandler,
+		EvalContextHandler: contextHandlerParseInteger,
+	},
 	"formatBase": {
 		Func:               jlib.FormatBase,
 		UndefinedHandler:   defaultUndefinedHandler,
@@ -608,4 +613,8 @@ func contextHandlerFormatNumber(argv []reflect.Value) bool {
 
 func isStringOrCallable(v reflect.Value) bool {
 	return jtypes.IsString(v) || jtypes.IsCallable(v)
+}
+
+func contextHandlerParseInteger(argv []reflect.Value) bool {
+	return len(argv) == 1
 }

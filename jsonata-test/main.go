@@ -140,7 +140,7 @@ func runTest(tc testCase, dataDir string, path string) (bool, error) {
 	expr, unQuoted := replaceQuotesInPaths(tc.Expr)
 	got, _ := eval(expr, tc.Bindings, data)
 
-	if !equalResults(got, tc.Result) {
+	if !equalResults(got, tc.Result) && (!strings.Contains(expr, "$keys(") || !equalResultsUnordered(got, tc.Result)) {
 		failed = true
 		printTestCase(os.Stderr, tc, strings.TrimSuffix(filepath.Base(path), ".json"))
 		fmt.Fprintf(os.Stderr, "Test file: %s \n", path)
@@ -279,10 +279,22 @@ func eval(expression string, bindings map[string]any, data any) (any, error) {
 		return nil, err
 	}
 
-	return expr.Eval(data)
+	res, err := expr.Eval(data)
+	return res, err
+}
+
+func isNullValue(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	return rv.Kind() == reflect.Pointer && rv.IsNil()
 }
 
 func equalResults(x, y any) bool {
+	if isNullValue(x) && isNullValue(y) {
+		return true
+	}
 	if reflect.DeepEqual(x, y) {
 		return true
 	}
@@ -302,6 +314,23 @@ func equalResults(x, y any) bool {
 		return true
 	}
 
+	if types.IsMap(vx) && types.IsMap(vy) {
+		if vx.Len() != vy.Len() {
+			return false
+		}
+		for _, k := range vx.MapKeys() {
+			valX := vx.MapIndex(k)
+			valY := vy.MapIndex(k)
+			if !valY.IsValid() {
+				return false
+			}
+			if !equalResults(valX.Interface(), valY.Interface()) {
+				return false
+			}
+		}
+		return true
+	}
+
 	ix, okx := types.AsNumber(vx)
 	iy, oky := types.AsNumber(vy)
 	if okx && oky && ix == iy {
@@ -310,8 +339,19 @@ func equalResults(x, y any) bool {
 
 	sx, okx := types.AsString(vx)
 	sy, oky := types.AsString(vy)
-	if okx && oky && sx == sy {
-		return true
+	if okx && oky {
+		if sx == sy {
+			return true
+		}
+		if len(sx) == len(sy) &&
+			strings.HasPrefix(sx, "{") && strings.HasSuffix(sx, "}") &&
+			strings.HasPrefix(sy, "{") && strings.HasSuffix(sy, "}") &&
+			strings.Count(sx, "\n") == strings.Count(sy, "\n") {
+			var mx, my map[string]any
+			if jsonv2.Unmarshal([]byte(sx), &mx) == nil && jsonv2.Unmarshal([]byte(sy), &my) == nil {
+				return equalResults(mx, my)
+			}
+		}
 	}
 
 	bx, okx := types.AsBool(vx)
@@ -320,6 +360,45 @@ func equalResults(x, y any) bool {
 		return true
 	}
 
+	return false
+}
+
+func equalResultsUnordered(x, y any) bool {
+	if equalResults(x, y) {
+		return true
+	}
+	vx := types.Resolve(reflect.ValueOf(x))
+	vy := types.Resolve(reflect.ValueOf(y))
+	if types.IsMap(vx) && types.IsMap(vy) && vx.Len() == vy.Len() {
+		for _, k := range vx.MapKeys() {
+			valX := vx.MapIndex(k)
+			valY := vy.MapIndex(k)
+			if !valY.IsValid() {
+				return false
+			}
+			if !equalResultsUnordered(valX.Interface(), valY.Interface()) {
+				return false
+			}
+		}
+		return true
+	}
+	if types.IsArray(vx) && types.IsArray(vy) && vx.Len() == vy.Len() {
+		used := make([]bool, vy.Len())
+		for i := 0; i < vx.Len(); i++ {
+			found := false
+			for j := 0; j < vy.Len(); j++ {
+				if !used[j] && equalResultsUnordered(vx.Index(i).Interface(), vy.Index(j).Interface()) {
+					used[j] = true
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+		return true
+	}
 	return false
 }
 

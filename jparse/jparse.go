@@ -4,6 +4,8 @@
 
 package jparse
 
+import "fmt"
+
 // The JSONata parser is based on Pratt's Top Down Operator
 // Precededence algorithm (see https://tdop.github.io/). Given
 // a series of tokens representing a JSONata expression and the
@@ -52,6 +54,7 @@ var nuds = [...]nud{
 	typeMinus:       parseNegation,
 	typeDescendent:  parseDescendent,
 	typePipe:        parseObjectTransformation,
+	typeMod:         parseParent,
 	typeIn:          parseName,
 	typeAnd:         parseName,
 	typeOr:          parseName,
@@ -71,6 +74,8 @@ var leds = [...]led{
 	typeConcat:       parseStringConcatenation,
 	typeSort:         parseSort,
 	typeDot:          parseDot,
+	typeFocus:        parseFocusBind,
+	typeIndex:        parseIndexBind,
 	typePlus:         parseNumericOperator,
 	typeMinus:        parseNumericOperator,
 	typeMult:         parseNumericOperator,
@@ -100,6 +105,8 @@ var bps = initBindingPowers([][]tokenType{
 	{
 		typeParenOpen,
 		typeBracketOpen,
+		typeFocus,
+		typeIndex,
 	},
 	{
 		typeDot,
@@ -193,18 +200,43 @@ func Parse(expr string) (root Node, err error) {
 		return nil, newError(ErrSyntaxError, p.token)
 	}
 
-	return node.optimize()
+	root, err = node.optimize()
+	if err != nil {
+		return nil, err
+	}
+
+	if pn, ok := root.(*ParentNode); ok {
+		return nil, newErrorHint(ErrParentNotDerived, token{Value: "%", Position: pn.Position}, "")
+	}
+	if len(extractSeekingParents(root)) > 0 {
+		return nil, newError(ErrParentNotDerived, p.token)
+	}
+
+	return root, nil
 }
 
 type parser struct {
-	lexer lexer
-	token token
+	lexer         lexer
+	token         token
+	ancestorLabel int
+	ancestorIndex int
 	// The following function pointers are a workaround
 	// for an initialisation loop compile error. See the
 	// comment in newParser.
 	lookupNud func(tokenType) nud
 	lookupLed func(tokenType) led
 	lookupBp  func(tokenType) int
+}
+
+func (p *parser) newAncestorSlot() *AncestorSlot {
+	slot := &AncestorSlot{
+		Label: fmt.Sprintf("!%d", p.ancestorLabel),
+		Level: 1,
+		Index: p.ancestorIndex,
+	}
+	p.ancestorLabel++
+	p.ancestorIndex++
+	return slot
 }
 
 func newParser(input string) parser {
